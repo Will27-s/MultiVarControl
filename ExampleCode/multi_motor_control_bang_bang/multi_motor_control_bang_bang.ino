@@ -108,6 +108,11 @@ int Bang_Bang_Control(int e, int u_amplitude) {
   return u;
 }
 
+int Proportional_Control(int e, float kp) {
+  int u;
+  u = kp * e;
+  return u;
+}
 
 void setup() {
   Serial.begin(230400);  // set baud rate for communication between USB & raspberry pi pico
