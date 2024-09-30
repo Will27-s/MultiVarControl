@@ -1,5 +1,6 @@
 #include <SimplyAtomic.h>  // For the position read, to avoid missed counts
 // Testing if updates are read in VSCode
+// Testing if updates are read in arduino
 
 // Define Encoder pins, pwm pin, and motor driver pins
 #define ENCA 0     // interrupt pin encoder A
