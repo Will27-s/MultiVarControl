@@ -111,6 +111,12 @@ int Bang_Bang_Control(int e, int u_amplitude) {
 int Proportional_Control(int e, float kp) {
   int u;
   u = kp * e;
+  if (e > 255) {
+    u = 255;
+  } 
+  if ( e < -255) {
+    u = -255;
+  }
   return u;
 }
 
