@@ -14,9 +14,9 @@
 
 // Motor 2
 // Outputs
-#define MOT2PWM_pin 6  // pin to send pwm value to motor driver
-#define MOT2IN1 7      // motor driver direction pins
-#define MOT2IN2 8
+#define MOT2PWM_pin 8  // pin to send pwm value to motor driver
+#define MOT2IN1 6      // motor driver direction pins
+#define MOT2IN2 7
 // Inputs
 #define MOT2ENCA 10
 #define MOT2ENCB 9
@@ -28,7 +28,7 @@ int interval_count = 0;
 float interval_start = 0;
 float ref = 0;
             // u is the control signal
-int u_amplitude = 150;  // control signal amplitude (must be < 256)
+int u_amplitude = 200 ;  // control signal amplitude (must be < 256)
 long time_start = 0;
 float counts_per_rotation = 131.25 * 16;
 float ref_amplitude = counts_per_rotation;
@@ -111,10 +111,10 @@ int Bang_Bang_Control(int e, int u_amplitude) {
 int Proportional_Control(int e, float kp) {
   int u;
   u = kp * e;
-  if (e > 255) {
+  if (u > 255) {
     u = 255;
   } 
-  if ( e < -255) {
+  if ( u < -255) {
     u = -255;
   }
   return u;
@@ -141,8 +141,9 @@ void loop() {
     rotations++;
     time_start = millis();
   }
-
-  ref = ref_amplitude * rotations;
+  int ref1,ref2;
+  ref1 = ref_amplitude * rotations;
+  ref2 = ref_amplitude * (rotations) ;
 
   ATOMIC() {  // lines between these brackets are executed even if an interrupt occurs
     motor1.pos = motor1.posi;
@@ -151,13 +152,15 @@ void loop() {
 
   // calculate position error
   //error = ref - pos
-  motor1.get_error(ref); 
-  motor2.get_error(ref);
+  motor1.get_error(ref1); 
+  motor2.get_error(-ref2);
 
   // calculate control signal
-  motor1.u = Bang_Bang_Control(motor1.e, u_amplitude);
-  motor2.u = Bang_Bang_Control(motor2.e, u_amplitude);
-
+  //motor1.u = Proportional_Control(motor1.e, 5);
+  motor1.u = Proportional_Control(motor1.e, 5);
+  motor2.u = Proportional_Control(motor2.e, 5);
+  //motor1.u = 150;
+  //motor2.u = -150;
 
   // call setMotor function to drive the motor at a set direction and torque based on a u output
   motor1.set_motor(motor1.u);
@@ -175,6 +178,14 @@ void loop() {
     Serial.print(motor1.e);
     Serial.print(" ");
     Serial.print(motor1.u);
+    Serial.print(" ");
+    Serial.println();
+    Serial.print(" ");
+    Serial.print(motor2.pos);
+    Serial.print(" ");
+    Serial.print(motor2.e);
+    Serial.print(" ");
+    Serial.print(motor2.u);
     Serial.print(" ");
     Serial.println();
   }
