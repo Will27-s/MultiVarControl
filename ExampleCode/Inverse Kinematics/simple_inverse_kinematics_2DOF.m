@@ -14,7 +14,7 @@ max_speed = 320; % mm/s
 time_step = 0.002; % s
 gearbox_backlash = 1.5*pi/180;  % radians
 shapes = strvcat('square','circle','spiral','lissajous');
-shape_num = 1;
+shape_num = 2;
 shape_to_draw = deblank(shapes(shape_num,:));
 animate = 1; % 1 = animate motion
 animate_step = 3;
