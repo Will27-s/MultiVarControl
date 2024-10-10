@@ -8,7 +8,7 @@ struct Angles {
   float th2;
 }
 
-float inverse_kinematics(float x, float y, float l1, float l2) {
+void inverse_kinematics(float x, float y, float l1, float l2) {
   Angles angles; // Not sure if this is the most efficient way to store
   float costh2 = (pow(x,2) + pow(y,2) -pow(l1,2)-pow(l2,2))/(2 * l1 * l2);
   float sinth2 = sqrt(1-pow(costh2,2));

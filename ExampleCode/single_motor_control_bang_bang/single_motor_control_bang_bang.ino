@@ -103,6 +103,23 @@ void setMotor(int dir, float pwmVal, int pwm_pin, int in1, int in2) {
   }
 }
 
+loat PID_Control(int e, int e_sum, int e_prev, float kp, float ki, float kd, long delta_time) {
+  float u;
+  float proportional = kp * e;
+  float integral = ki * e_sum * delta_time;
+  float derivative = kd * (e - e_prev)/delta_time;
+
+  if (u > 255) {
+    u = 255;
+  } 
+  if ( u < -255) {
+    u = -255;
+  }
+  u = proportional + integral + derivative;
+  return u;
+}
+
+
 // Interrupt service routine 
 void readEncoder() {
   int b = digitalRead(ENCB);
