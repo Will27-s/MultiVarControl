@@ -182,7 +182,16 @@ float PID_Control(int e, int e_sum, int e_prev, float kp, float ki, float kd, lo
   u = proportional + integral + derivative;
   return u;
 }
-
+float Step_Response(int step_time, int u_amplitude) {
+  static int increment = 0;
+  static float u = u_amplitude;
+  int step_cycles = step_time/delta_time; // Gets the number of cycles that is equivalent to the chosen step_time
+  if (increment >= step_cycles) {
+    u = -1 * u;
+  }
+  increment++;
+  return u;
+}
 
 
 void setup() {
