@@ -34,7 +34,7 @@ float counts_per_rotation = 131.25 * 16;
 float ref_amplitude = counts_per_rotation;
 int rotations = 0;
 float time_per_rotation = 5000;  // time allowed per rotation, in milliseconds
-long delta_time = 0.1 * 1000; // ms * 1000 microseconds
+long delta_time = 100; //microseconds
 
   
 
@@ -46,8 +46,8 @@ class Motor {
     int IN1;
     int IN2;
     
-    volatile int posi;
-    int pos;
+    volatile int posi = 0;
+    int pos = 0;
     int e = 0; // Error
     int e_sum = 0;
     int e_prev = 0;
@@ -91,9 +91,14 @@ class Motor {
       }
   }
     void set_error(int ref) {
-      e_prev = e;
       e = ref - pos;
-      e_sum = e_sum + e ;
+      
+    }
+    void set_error_prev(int ref) {
+      e_prev = ref - pos;
+    }
+    void set_error_sum() {
+      e_sum += e;
     }
 
     void set_pos_with_posi() {
@@ -167,11 +172,12 @@ float Proportional_Control(int e, float kp) {
   return u;
 }
 
-float PID_Control(int e, int e_sum, int e_prev, float kp, float ki, float kd, long delta_time) {
-  float u;
-  float proportional = kp * e;
-  float integral = ki * e_sum * delta_time;
-  float derivative = kd * (e - e_prev)/delta_time;
+/*int PID_Control(int e, int e_sum, int e_prev, float kp, float ki, float kd) {
+  delta_time = delta_time/1e6;
+  int u;
+  int proportional = kp * e;
+  int integral = ki * e_sum * delta_time;
+  int derivative = kd * (e - e_prev)/delta_time;
 
   if (u > 255) {
     u = 255;
@@ -179,15 +185,28 @@ float PID_Control(int e, int e_sum, int e_prev, float kp, float ki, float kd, lo
   if ( u < -255) {
     u = -255;
   }
-  u = proportional + integral + derivative;
+  u = proportional ;
+  return u;
+}*/
+int PID_Control( int e, int e_sum,int prev_e, float kp, float ki, float kd){
+  int u;
+  u = kp * e + kd * (((e - prev_e) * 1e6)/delta_time) + ki * (e_sum * delta_time/1e6);
+
+  if (u > 255) {
+    u = 255;
+  } 
+  if ( u < -255) {
+    u = -255;
+  }
   return u;
 }
-float Step_Response(int step_time, int u_amplitude) {
+
+float Step_Response(int step_time, int u_amplitude) { // step_time seconds
   static int increment = 0;
   static float u = u_amplitude;
-  int step_cycles = step_time/delta_time; // Gets the number of cycles that is equivalent to the chosen step_time
+  int step_cycles = step_time * 1e6/delta_time; // Gets the number of cycles that is equivalent to the chosen step_time
   if (increment >= step_cycles) {
-    u = -1 * u;
+    u = -1 * u; // Reverse polarity after step time
   }
   increment++;
   return u;
@@ -208,40 +227,56 @@ void setup() {
 
 // This loop implements bang-bang code
 void loop() {
-  loop_start_time = millis();
+  loop_start_time = micros();
   // Set a reference angle position for the motor. It will be in counts, so conversion is needed to degrees for output.
   // Will change by +360 degrees every time_per_rotation milliseconds
   if ((millis() - time_start) > time_per_rotation) {
     rotations++;
     time_start = millis();
-    motor1.set_error_sum_to_0();
-    motor2.set_error_sum_to_0();
+    //motor1.set_error_sum_to_0();
+    //motor2.set_error_sum_to_0();
 
   }
+
+  
   int ref1,ref2;
   ref1 = ref_amplitude * rotations;
   ref2 = ref_amplitude * (rotations) ;
+
+  motor1.set_error_prev(ref1);
+  motor2.set_error_prev(ref2);
+
 
   ATOMIC() {  // lines between these brackets are executed even if an interrupt occurs
     motor1.set_pos_with_posi();
     motor2.set_pos_with_posi();
   }
+  dt_regulator(delta_time);
   // calculate position error
   //error = ref - pos
   motor1.set_error(ref1); 
   motor2.set_error(-ref2);
 
+  motor1.set_error_sum();
+  motor2.set_error_sum();
+
   // calculate control signal
   // Proportional Control
-  motor1.set_u(Proportional_Control(motor1.get_error(), 18));
-  motor2.set_u(Proportional_Control(motor2.get_error(), 5));
+  //motor1.set_u(Proportional_Control(motor1.get_error(), 18));
+  //motor2.set_u(Proportional_Control(motor2.get_error(), 5));
  
   // PID Control
-  motor1.set_u(PID_Control( motor1.get_error(), motor1.get_error_sum(), motor1.get_error_prev(),18.0 , 129, 0.79, delta_time));
+  float kp = 18.0;
+  float ki = 129.0;
+  float kd = 0.79;
+  motor1.set_u(PID_Control( motor1.e, motor1.e_prev, motor1.e_sum, kp,ki,kd));
   
   // Constant Values
   //motor1.u = 150;
   //motor2.u = -150;
+
+  // Step Change
+  //motor1.set_u(Step_Response(3,u_amplitude));
 
   // call setMotor function to drive the motor at a set direction and torque based on a u output
   motor1.set_motor(motor1.get_u());
@@ -258,7 +293,7 @@ void loop() {
     Serial.print(" ");
     Serial.print(motor1.get_error());
     Serial.print(" ");
-    Serial.print(motor1.get_u());
+     Serial.print(motor1.e_sum);
     Serial.print(" ");
     Serial.println();
    
@@ -266,12 +301,17 @@ void loop() {
 
   // Place do while here
   dt_regulator(delta_time);
+  
 }
 
-void dt_regulator(long delta_time) {
-  float current_loop_time;
+void dt_regulator(long delta_time) { // Regulates time so that length of loop is the same
+  int current_loop_time = 0;
   do {
     current_loop_time = micros() - loop_start_time;
+    ATOMIC() {  // lines between these brackets are executed even if an interrupt occurs
+    motor1.set_pos_with_posi();
+    motor2.set_pos_with_posi();
+  }
   } while (current_loop_time < delta_time);
 }
 
