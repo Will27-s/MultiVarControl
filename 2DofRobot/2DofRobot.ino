@@ -201,7 +201,7 @@ void loop() {
 
   ref1 = ref1_circle[ref_index];
   ref2 = ref2_circle[ref_index];
-  if (ref_index <= ref_length) {
+  if (ref_index <= ref_length+1) {
     ref_index++;
   }
 

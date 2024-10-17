@@ -7,3 +7,13 @@ int rotate_every_time_per_rotation_ref_signal() {
   }
   return ref_amplitude * rotations;
 }
+
+
+/*int circle_reference() { // This just returns the index
+// Completes the circle waits 3 seconds then completes it again
+  static bool circle_complete = false;
+  if (circle_complete) {
+    
+  }
+
+}*/
