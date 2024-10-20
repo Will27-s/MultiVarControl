@@ -1,7 +1,6 @@
 import numpy as np
 
 
-
 # Takes in output motor speed in counts/s
 # motor_speed =  pos - pos_prev/delta_time
 # G_P_dot(s) = (lambda/T)/(s_1/T)
@@ -28,7 +27,7 @@ def getMotorSpeedArr(pos):
         if i == 0:
             motor_speed_arr = np.append(motor_speed_arr,0)
         else:
-            print(i)
+            
             motor_speed_arr = np.append(motor_speed_arr,(pos[i] - pos[i-1])/delta_time)
 
     return motor_speed_arr
@@ -63,8 +62,8 @@ motor_speed_arr = getMotorSpeedArr(pos)
 max_motor_speed = getMaxMotorSpeed(motor_speed_arr)
 maxInput = 18
 Lambda = getLambda(max_motor_speed,maxInput)
-Lambda = 22.5
+# Lambda = 22.5
 T = getTimeConstantT(max_motor_speed,motor_speed_arr,time)
-T = 0.29
+# T = 0.29
 kp,ki,kd = getControlConsants(T,Lambda,Ts=0.35)
 print('kp: ',kp,'ki: ',ki,'kd: ',kd)

@@ -67,9 +67,12 @@ def circleGeneration(L1,L2,circle_radius,time_taken,time_step):
 
     return motor_counts1, motor_counts2
 
+# TODO simulate using the motor counts info to recreate circle
 
 #File saving
-def save_file(motor_counts,path):
+def save_file(motor_counts,relative_path):
+    dirname = os.path.dirname(__file__)
+    path = os.path.join(dirname,relative_path)
     if not os.path.exists(path):
         os.mkdir(path)
 
@@ -78,9 +81,20 @@ def save_file(motor_counts,path):
         f.write(motor_counts)
 
 
+def plot_motor_position(motor_counts1,motor_counts2):
+    time_length = len(motor_counts1)
+    fig, ax1 = plt.subplots()
+    time = np.arange(0,time_length*time_step,time_step)
+    ax1.plot(time, motor_counts1,'.-',markersize=2)
+    ax1.plot(time,motor_counts2)
+    ax1.set_xlabel('Time(s)')
+    ax1.set_ylabel('Encoder Counts')
+    plt.show()
+
 path1 = './circle/motor1.txt'
 path2 = './circle/motor2.txt'
 motor_counts1, motor_counts2 = circleGeneration(L1,L2,circle_radius,time_taken,time_step)
+plot_motor_position(motor_counts1,motor_counts2)
 save_file(motor_counts1,path1)
 save_file(motor_counts2,path2)
 
