@@ -1,4 +1,4 @@
-// Interrupt service routine 
+// Interrupt service routines 
 void readEncoderMot1() {
   int b = digitalRead(motor1.get_ENCB_Pin());
   if (b > 0) {

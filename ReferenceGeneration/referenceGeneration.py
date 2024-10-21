@@ -93,9 +93,34 @@ def circleGeneration1DoF(motor_counts,sweep_angle=360,time_taken=3,time_step=tim
 # TODO simulate using the motor counts info to recreate circle
 
 #File saving
-def save_file(motor_counts,relative_path):
+
+def create_header_file(motor_counts1,motor_counts2,relative_path, shape):
+    ref_length = motor_counts1.size
+    # Create a header file
+    header_file_content = """
+    #ifndef ARRAYS_H
+    #define ARRAYS_H
+
+    const int ref_length = """+ str(ref_length) +""";
+
+    // Array 1
+    const int ref1"""+ "_"+ shape + """[] = {""" + ", ".join(map(str, motor_counts1)) + """};
+
+    // Array 1
+    const int ref2"""+ "_"+ shape + """[] = {""" + ", ".join(map(str, motor_counts2)) + """};
+
+    #endif  // ARRAYS_H
+    """
     dirname = os.path.dirname(__file__)
-    path = os.path.join(dirname,relative_path)
+    path = os.path.join(dirname,"../2DofRobot",relative_path)
+    with open(path,"w") as file:
+        file.write(header_file_content)
+
+def save_file(motor_counts,relative_path,shape):
+    dirname = os.path.dirname(__file__)
+    path = os.path.join(dirname,shape,relative_path)
+    print(dirname)
+    print(path)
     
     motor_counts = motor_counts.astype(int) # Making sure integers before saving
     motor_counts = ', '.join(map(str, motor_counts))
@@ -103,6 +128,7 @@ def save_file(motor_counts,relative_path):
         f.write('{')
         f.write(motor_counts)
         f.write('}')
+
 
 def get_time_array(motor_counts):
     time_length = len(motor_counts)
@@ -123,8 +149,6 @@ def plot_motor_position(time,motor_counts1,motor_counts2):
     plt.show()
 
 
-path1 = r'circle/motor11DoFGeneration.txt'
-path2 = r'circle/motor21DoFGeneration.txt'
 
 # Generation
 
@@ -164,11 +188,19 @@ motor_counts2 = circleGeneration1DoF(motor_counts2,time_taken=5)
 
 
 
-time = get_time_array(motor_counts1)
 print(motor_counts1.size,motor_counts2.size)
+
+
+path1 = r'motor11DoFGeneration.txt'
+path2 = r'motor21DoFGeneration.txt'
+
+save_file(motor_counts1,path1,'circle')
+save_file(motor_counts2,path2,'circle')
+
+header_path = '1DoFCircleReferenceSignals.h'
+create_header_file(motor_counts1,motor_counts2,header_path, 'circle')
+
+# Plotting
+time = get_time_array(motor_counts1)
 plot_motor_position(time,motor_counts1,motor_counts2) # Need to close plot window to end script, weird behaviour in VSCode
 
-save_file(motor_counts1,path1)
-save_file(motor_counts2,path2)
-
-# Future: Have a generation function that takes a shape as an input and auto saves it to the correct file, also include length of the array

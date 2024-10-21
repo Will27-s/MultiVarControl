@@ -1,7 +1,7 @@
 void record_pos_data() {
-  Serial.print(motor1.get_pos())
-  Serial.print(",")
-  Serial.println(motor2.get_pos())
+  Serial.print(motor1.get_pos());
+  Serial.print(",");
+  Serial.println(motor2.get_pos());
 }
 
 void serial_plotting() {
