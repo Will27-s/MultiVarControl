@@ -210,7 +210,9 @@ void loop() {
 
   // TODO Test whether placing it at the end and loop_start_time at the start works
   loop_start_time = micros();
-  dt_regulator(loop_start_time);
+  dt_regulator(delta_time_micros);
+
+  record_pos_data();
 
   ATOMIC() {  // lines between these brackets are executed even if an interrupt occurs
     motor1.set_pos_with_posi();
@@ -249,21 +251,7 @@ void loop() {
   motor2.set_motor(motor2.get_u());
 
 
-  // print target and position to see the response every print_interval times around the loop
-  interval_count = interval_count + 1;
-  if (interval_count >= print_interval) {
-    interval_count = 0;
-    Serial.print(ref1);
-    Serial.print(" ");
-    Serial.print(motor1.get_pos());
-    Serial.print(" ");
-    Serial.print(motor1.get_error());
-    Serial.print(" ");
-    Serial.print(motor1.get_u());
-    Serial.print(" ");
-    Serial.println();
-   
-  }
+  //serial_plotting(); # Function in DataRecording.ino
 
   
   
