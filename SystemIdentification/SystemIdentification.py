@@ -79,6 +79,10 @@ def getControlConsants(T,Lambda,Ts): # Ts Desired closed-loop settling time, T s
 path = 'recorded_data.csv'
 pos1,pos2,in1,in2 = store_recorded_data(path)
 time = get_time_arr(pos1)
+# An error is recording before 1000 means I have to do this
+pos1 = pos1[1000:]
+time = time[1000:]
+in1 = in1[1000:]
 motor_speed_arr1 = getMotorSpeedArr(pos1)
 max_motor_speed = getMaxMotorSpeed(motor_speed_arr1)
 maxInput = getMaxMotorSpeed(in1)
@@ -88,5 +92,8 @@ T = getTimeConstantT(max_motor_speed,motor_speed_arr1,time)
 # T = 0.29
 kp,ki,kd = getControlConsants(T,Lambda,Ts=0.35)
 print('kp: ',kp,'ki: ',ki,'kd: ',kd)
-plt.plot(time,motor_speed_arr1)
-plt.show()
+
+# plt.plot(time,motor_speed_arr1)
+# plt.show()
+plt.plot(time,in1)
+plt.show

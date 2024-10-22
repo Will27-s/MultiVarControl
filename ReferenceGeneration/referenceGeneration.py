@@ -14,8 +14,8 @@ encoder_steps_per_revolution = 131.25 * 16
 counts_per_degree = encoder_steps_per_revolution / 360  
 
 def forwardKinematics(th1,th2,L1,L2):
-    x = L1 * np.cos(np.rad2deg(th1)) + L2 * np.cos(np.rad2deg(th1+th2))
-    y = L1 * np.sin(np.rad2deg(th1)) + L2 * np.sin(np.rad2deg(th1+th2))
+    x = L1 * np.cos(np.deg2rad(th1)) + L2 * np.cos(np.deg2rad(th1+th2))
+    y = L1 * np.sin(np.deg2rad(th1)) + L2 * np.sin(np.deg2rad(th1+th2))
     
     return x,y
 
@@ -23,8 +23,9 @@ def forwardKinematics(th1,th2,L1,L2):
 time_taken = 10 #seconds
 x_centre = L1/2
 y_centre = L1+L2/2
-x_centre,y_centre = forwardKinematics(90,0,L1,L2) # Using forward kinematics to define centre position
-
+x_start, y_start = 0,0
+x_centre,y_centre = forwardKinematics(45,45,L1,L2) # Using forward kinematics to define centre position
+print(x_centre,y_centre)
 circle_radius = 49    
 
 
@@ -38,12 +39,12 @@ def inverseKinematics(x,y,L1,L2):
     B = L1 + (L2 * costh2)
     C = -L2 * sinth2
 
-    w = (C-np.sqrt(C**2 + B**2 - A**2))/(A+B)
+    w = (C+np.sqrt(C**2 + B**2 - A**2))/(A+B)
     theta1 = 2 * np.arctan(w)
     return theta1,theta2
 
 def convert_degrees_to_encoder_counts(theta):
-    return np.ceil(theta * counts_per_degree)
+    return np.floor(theta * counts_per_degree)
 
 def getNumberofTimeSteps(time_taken,time_step):
     return int(np.ceil(time_taken/time_step))
@@ -54,7 +55,7 @@ def circleGeneration2DoF(L1,L2,circle_radius,time_taken,time_step):
     motor_counts1 = np.array([])
     motor_counts2 = np.array([])
 
-    N = int(np.ceil(time_taken/time_step))
+    N = getNumberofTimeSteps(time_taken,time_step)
     angles = np.linspace(0, 2 * np.pi, N)
     for angle in angles:
         x = x_centre + circle_radius * np.cos(angle)
@@ -93,6 +94,19 @@ def circleGeneration1DoF(motor_counts,sweep_angle=360,time_taken=3,time_step=tim
     return motor_counts
 
 # TODO simulate using the motor counts info to recreate circle
+
+def shape_recreation(motor_counts1,motor_counts2):
+    x_values,y_values = [0],[0]
+    theta_1 = motor_counts1 / counts_per_degree
+    theta_2 = motor_counts2 / counts_per_degree
+    for i,a in enumerate(motor_counts1):
+        x,y = forwardKinematics(theta_1[i],theta_2[i],L1,L2)
+        x_values.append(x)
+        y_values.append(y)
+    x_values = np.array(x_values)
+    y_values = np.array(y_values)
+
+    return x_values, y_values
 
 #File saving
 
@@ -204,3 +218,10 @@ create_header_file(motor_counts1,motor_counts2,header_path, 'circle')
 time = get_time_array(motor_counts1)
 plot_motor_position(time,motor_counts1,motor_counts2) # Need to close plot window to end script, weird behaviour in VSCode
 
+x_recreated, y_recreated = shape_recreation(motor_counts1circle,motor_counts2circle)
+plt.plot(x_recreated,y_recreated, '.')
+plt.grid()
+plt.axis('equal')
+plt.show()
+x,y = forwardKinematics(30,45,L1,L2)
+print(np.rad2deg(inverseKinematics(x,y,L1,L2)))
