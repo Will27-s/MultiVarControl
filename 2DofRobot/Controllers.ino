@@ -21,12 +21,11 @@ float Proportional_Control(int e, float kp) {
 }
 
 
-float PID_Control(int e, int e_sum, int e_prev,int e_windup_limit , float kp, float ki, float kd) {
+float PID_Control(int e, int e_sum, int e_prev, float kp, float ki, float kd) {
   float u;
   float proportional = kp * e;
-
-  e_sum = conditional_integration(e, e_sum, e_windup_limit);
-  float integral = ki * e_sum * delta_time_seconds;
+  // derivative is noisy
+  float integral = ki * e_sum * delta_time_seconds;;
   float derivative = kd * (e - e_prev)/delta_time_seconds;
 
   
@@ -36,12 +35,6 @@ float PID_Control(int e, int e_sum, int e_prev,int e_windup_limit , float kp, fl
   return u;
 }
 
-float conditional_integration(int e, int e_sum, int e_windup_limit) {
-  if (abs(e) > e_windup_limit) {
-    e_sum = 0;
-  }
-  return e_sum;
-}
 
 float set_u_to_max_if_out_of_bounds(float u) {
   if (u > 255) {

@@ -1,6 +1,7 @@
 #include <SimplyAtomic.h>  // For the position read, to avoid missed counts
 #include "functionDefinition.h"
-#include "1DoFCircleReferenceSignals.h"
+//#include "1DoFCircleReferenceSignals.h"
+#include "2DoFCircleReferenceSignals.h"
 
 
 // Define Encoder pins, PWM pin, and motor driver pins
@@ -35,7 +36,7 @@ float counts_per_rotation = 131.25 * 16;
 float ref_amplitude = counts_per_rotation;
 int rotations = 0; // TODO Make a static var in roation ref sig func
 float time_per_rotation = 5000;  // time allowed per rotation, in milliseconds for rotate reference
-float delta_time_micros = 6000; //microseconds
+float delta_time_micros = 2000; //microseconds
 float delta_time_seconds = delta_time_micros/1e6;
 
 
@@ -52,10 +53,10 @@ float kp2 = kp;
 float ki2 = ki;
 float kd2 = kd;
 
-int e_windup_limit = 30;
 
 // reference signal code  
 // Future use pointers to make code more clean
+bool initial_position = false;
 int ref1,ref2;
 int ref_index = 0;
 
@@ -68,6 +69,9 @@ class Motor {
     int PWM_pin;
     int IN1;
     int IN2;
+    float kp;
+    float ki;
+    float kd;
     
     volatile int posi = 0;
     int pos = 0;
@@ -76,7 +80,7 @@ class Motor {
     int e_prev = 0;
     float u = 0; // Control Signal
 
-    Motor(int eA, int eB, int pwm, int in1, int in2) : ENCA(eA), ENCB(eB), PWM_pin(pwm), IN1(in1), IN2(in2) {
+    Motor(int eA, int eB, int pwm, int in1, int in2, float p, float i , float d) : ENCA(eA), ENCB(eB), PWM_pin(pwm), IN1(in1), IN2(in2), kp(p), ki(i), kd(d) {
         // Constructor stores pin values but does not configure them
     }
     void begin() {
@@ -123,7 +127,16 @@ class Motor {
       e_prev = ref - pos;
     }
     void set_error_sum() {
-      e_sum += e;
+      if (abs(e * kp) > 255) {
+
+      } else {
+        e_sum += e;
+      }
+      
+    }
+
+    void set_posi(int posi_) {
+      posi = posi_;
     }
 
     void set_pos_with_posi() {
@@ -170,8 +183,8 @@ class Motor {
 };
 
 // Declaring the motors
-Motor motor1( MOT1ENCA,MOT1ENCB, MOT1PWM_pin,MOT1IN1, MOT1IN2);
-Motor motor2( MOT2ENCA,MOT2ENCB, MOT2PWM_pin,MOT2IN1, MOT2IN2);
+Motor motor1( MOT1ENCA,MOT1ENCB, MOT1PWM_pin,MOT1IN1, MOT1IN2,kp1,ki1,kd1);
+Motor motor2( MOT2ENCA,MOT2ENCB, MOT2PWM_pin,MOT2IN1, MOT2IN2,kp2,ki2,kd2);
 
 void setup() {
   Serial.begin(230400);  // set baud rate for communication between USB & raspberry pi pico
@@ -182,6 +195,8 @@ void setup() {
   attachInterrupt(digitalPinToInterrupt(motor1.ENCA), readEncoderMot1, RISING);
   attachInterrupt(digitalPinToInterrupt(motor2.ENCA), readEncoderMot2, RISING);
 
+  motor1.set_posi(ref1_circle[0]);
+  motor2.set_posi(ref2_circle[0]);
   time_start = millis();
 }
 
@@ -194,10 +209,14 @@ void loop() {
   //ref2 = rotate_every_time_per_rotation_ref_signal();
 
 
+  
+
   ref1 = ref1_circle[ref_index];
   ref2 = ref2_circle[ref_index];
-  if (ref_index <= ref_length+1) {
+  if (ref_index <= ref_length) {
     ref_index++;
+  } else {
+    ref_index = 0;
   }
 
   motor1.set_error_prev(ref1);
@@ -207,7 +226,7 @@ void loop() {
   loop_start_time = micros();
   dt_regulator(delta_time_micros);
 
-  record_pos_data();
+  //record_pos_data();
 
   ATOMIC() {  // lines between these brackets are executed even if an interrupt occurs
     motor1.set_pos_with_posi();
@@ -230,8 +249,8 @@ void loop() {
  
   
   // PID Control
-  //motor1.set_u(PID_Control( motor1.e, motor1.e_sum, motor1.e_prev,e_windup_limit, kp,ki,kd));
-  //motor2.set_u(PID_Control( motor2.e, motor2.e_sum, motor2.e_prev,e_windup_limit, kp,ki,kd));
+  motor1.set_u(PID_Control( motor1.e, motor1.e_sum, motor1.e_prev, motor1.kp,motor1.ki,motor1.kd));
+  motor2.set_u(PID_Control( motor2.e, motor2.e_sum, motor2.e_prev, motor2.kp,motor2.ki,motor2.kd));
   
   // Constant Values
   //motor1.set_u(0.0);
@@ -239,14 +258,15 @@ void loop() {
   //motor2.u = 150;
 
   // Step Change
-  motor1.set_u(Step_Input(3));
+  //motor1.set_u(Step_Input(3));
+  //motor2.set_u(Step_Input(3));
 
   // Drive Motor Based on u value
   motor1.set_motor(motor1.get_u());
   motor2.set_motor(motor2.get_u());
 
 
-  //serial_plotting(); # Function in DataRecording.ino
+  serial_plotting(); // Function in DataRecording.ino
 
   
   

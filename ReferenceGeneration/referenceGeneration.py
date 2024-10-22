@@ -3,9 +3,9 @@ import matplotlib.pyplot as plt
 import os
 
 # Parameters
-L1 = 160  #mm?
-L2 = 75   #mm?
-time_taken = 5 #seconds
+L1 = 126  #mm?
+L2 = 145   #mm?
+
 time_step = 2000 #micro seconds
 time_step = time_step * 1e-6 # Convert to seconds
 
@@ -20,9 +20,11 @@ def forwardKinematics(th1,th2,L1,L2):
     return x,y
 
 #Circle Case
+time_taken = 10 #seconds
 x_centre = L1/2
 y_centre = L1+L2/2
-x_centre,y_centre = forwardKinematics(45,45,L1,L2) # Using forward kinematics to define centre position
+x_centre,y_centre = forwardKinematics(90,0,L1,L2) # Using forward kinematics to define centre position
+
 circle_radius = 49    
 
 
@@ -104,10 +106,10 @@ def create_header_file(motor_counts1,motor_counts2,relative_path, shape):
     const int ref_length = """+ str(ref_length) +""";
 
     // Array 1
-    const int ref1"""+ "_"+ shape + """[] = {""" + ", ".join(map(str, motor_counts1)) + """};
+    const int ref1"""+ "_"+ shape + """[] = {""" + ", ".join(map(str, motor_counts1.astype(int))) + """};
 
     // Array 1
-    const int ref2"""+ "_"+ shape + """[] = {""" + ", ".join(map(str, motor_counts2)) + """};
+    const int ref2"""+ "_"+ shape + """[] = {""" + ", ".join(map(str, motor_counts2.astype(int))) + """};
 
     #endif  // ARRAYS_H
     """
@@ -153,15 +155,17 @@ def plot_motor_position(time,motor_counts1,motor_counts2):
 # Generation
 
 # Circle
-'''
-motor_counts1, motor_counts2 = circleGeneration2DoF(L1,L2,circle_radius,time_taken,time_step)
+motor_counts1 = np.array([])
+motor_counts2 = np.array([])
+motor_counts1circle, motor_counts2circle = circleGeneration2DoF(L1,L2,circle_radius,5,time_step)
+motor_counts1 = np.append(motor_counts1,motor_counts1circle)
+motor_counts2 = np.append(motor_counts2,motor_counts2circle)
 motor_counts1 = wait_x_seconds_generation(3,motor_counts1)
 motor_counts2 = wait_x_seconds_generation(3,motor_counts2)
-motor_counts1, motor_counts2 = circleGeneration2DoF(L1,L2,circle_radius,time_taken,time_step)
-'''
+
 # 1DoF Circle
 # Wait 2 seconds then Motor 1 circle for 6 seconds, wait 3 seconds motor2 circles for 4 seconds, wait 2 seconds, then both circles for 5 seconds
-
+'''
 motor_counts1 = np.array([])
 motor_counts2 = np.array([])
 motor_counts1 = wait_x_seconds_generation(2,motor_counts1)
@@ -181,23 +185,19 @@ motor_counts2 = wait_x_seconds_generation(2,motor_counts2)
 
 motor_counts1 = circleGeneration1DoF(motor_counts1,time_taken=5)
 motor_counts2 = circleGeneration1DoF(motor_counts2,time_taken=5)
+'''
 
-
-
-
-
-
-
+# Check if arrays are equal length
 print(motor_counts1.size,motor_counts2.size)
+print("motor1 and motor2 are equal: ",motor_counts1.size==motor_counts2.size)
 
-
-path1 = r'motor11DoFGeneration.txt'
-path2 = r'motor21DoFGeneration.txt'
+path1 = r'motor12DoFGeneration.txt'
+path2 = r'motor22DoFGeneration.txt'
 
 save_file(motor_counts1,path1,'circle')
 save_file(motor_counts2,path2,'circle')
 
-header_path = '1DoFCircleReferenceSignals.h'
+header_path = '2DoFCircleReferenceSignals.h'
 create_header_file(motor_counts1,motor_counts2,header_path, 'circle')
 
 # Plotting
