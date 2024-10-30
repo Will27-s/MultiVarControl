@@ -72,6 +72,12 @@ def circleGeneration2DoF(L1,L2,circle_radius,time_taken,time_step):
 
 
     return motor_counts1, motor_counts2
+
+def get_to_x_position(start_position,end_position,time_taken,time_step=time_step):
+    N = getNumberofTimeSteps(time_taken,time_step)
+    positions = np.linspace(start_position,end_position,N).astype(int)
+    return positions
+
 def wait_x_seconds_generation(time_to_wait,motor_counts): # Cretes an array that allows the motor to wait at it's current position
     if motor_counts.size == 0:
         final_value = 0
@@ -169,13 +175,39 @@ def plot_motor_position(time,motor_counts1,motor_counts2):
 # Generation
 
 # Circle
-motor_counts1 = np.array([])
-motor_counts2 = np.array([])
+motor_counts1_start = convert_degrees_to_encoder_counts(90)
+motor_counts2_start = convert_degrees_to_encoder_counts(0)
+
+
+motor_counts1 = np.array([motor_counts1_start])
+motor_counts2 = np.array([motor_counts2_start])
+
+
 motor_counts1circle, motor_counts2circle = circleGeneration2DoF(L1,L2,circle_radius,5,time_step)
+
+motor_counts1 = wait_x_seconds_generation(2,motor_counts1)
+motor_counts2 = wait_x_seconds_generation(2,motor_counts2)
+
+
+# Get's to the start position of the circle from completely straight
+motor_counts1 = np.append(motor_counts1,get_to_x_position(motor_counts1_start,motor_counts1circle[0],time_taken=3))
+motor_counts2 = np.append(motor_counts2,get_to_x_position(motor_counts2_start,motor_counts2circle[0],time_taken=3))
+
+motor_counts1 = wait_x_seconds_generation(2,motor_counts1)
+motor_counts2 = wait_x_seconds_generation(2,motor_counts2)
+
+# Adds circle to arrays
 motor_counts1 = np.append(motor_counts1,motor_counts1circle)
 motor_counts2 = np.append(motor_counts2,motor_counts2circle)
-motor_counts1 = wait_x_seconds_generation(3,motor_counts1)
-motor_counts2 = wait_x_seconds_generation(3,motor_counts2)
+
+motor_counts1 = wait_x_seconds_generation(2,motor_counts1)
+motor_counts2 = wait_x_seconds_generation(2,motor_counts2)
+# Returns to the start position
+motor_counts1 = np.append(motor_counts1,get_to_x_position(motor_counts1[-1],motor_counts1_start,time_taken=3))
+motor_counts2 = np.append(motor_counts2,get_to_x_position(motor_counts2[-1],motor_counts2_start,time_taken=3))
+
+motor_counts1 = wait_x_seconds_generation(2,motor_counts1)
+motor_counts2 = wait_x_seconds_generation(2,motor_counts2)
 
 # 1DoF Circle
 # Wait 2 seconds then Motor 1 circle for 6 seconds, wait 3 seconds motor2 circles for 4 seconds, wait 2 seconds, then both circles for 5 seconds
@@ -218,10 +250,8 @@ create_header_file(motor_counts1,motor_counts2,header_path, 'circle')
 time = get_time_array(motor_counts1)
 plot_motor_position(time,motor_counts1,motor_counts2) # Need to close plot window to end script, weird behaviour in VSCode
 
-x_recreated, y_recreated = shape_recreation(motor_counts1circle,motor_counts2circle)
+x_recreated, y_recreated = shape_recreation(motor_counts1,motor_counts2)
 plt.plot(x_recreated,y_recreated, '.')
 plt.grid()
 plt.axis('equal')
 plt.show()
-x,y = forwardKinematics(30,45,L1,L2)
-print(np.rad2deg(inverseKinematics(x,y,L1,L2)))
