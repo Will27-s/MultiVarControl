@@ -13,6 +13,9 @@ time_step = time_step * 1e-6 # Convert to seconds
 encoder_steps_per_revolution = 131.25 * 16  
 counts_per_degree = encoder_steps_per_revolution / 360  
 
+circle_radius = 49   
+triangle_side_length = 110
+
 def forwardKinematics(th1,th2,L1,L2):
     x = L1 * np.cos(np.deg2rad(th1)) + L2 * np.cos(np.deg2rad(th1+th2))
     y = L1 * np.sin(np.deg2rad(th1)) + L2 * np.sin(np.deg2rad(th1+th2))
@@ -20,24 +23,18 @@ def forwardKinematics(th1,th2,L1,L2):
     return x,y
 
 # Time Parameters
-time_taken = 10
+time_taken_circle = 2
+time_taken_triangle = 4
+time_taken_square = 8
 max_speed = None # to be added for acceleration
 
 #Circle Parameters
-x_centre,y_centre = forwardKinematics(110,10,L1,L2) # Using forward kinematics to define centre position
-print(x_centre,y_centre)
-circle_radius = 49   
+x_centre_circle,y_centre_circle = forwardKinematics(45,90,L1,L2) # Using forward kinematics to define centre position
+x_centre_triangle,y_centre_triangle = forwardKinematics(45,90,L1,L2) # Using forward kinematics to define centre position
+x_centre_square,y_centre_square = forwardKinematics(45,90,L1,L2) # Using forward kinematics to define centre position
 
 
 #Triangle Parameters 
-triangle_side_length = 110
-triangle_radius = triangle_side_length / np.sqrt(3)
-angle1, angle2, angle3 = 0, 120, 240  # Degrees from the center
-x_t1, y_t1 = x_centre + triangle_radius * np.cos(np.deg2rad(angle1)), y_centre + triangle_radius * np.sin(np.deg2rad(angle1))
-x_t2, y_t2 = x_centre + triangle_radius * np.cos(np.deg2rad(angle2)), y_centre + triangle_radius * np.sin(np.deg2rad(angle2))
-x_t3, y_t3 = x_centre + triangle_radius * np.cos(np.deg2rad(angle3)), y_centre + triangle_radius * np.sin(np.deg2rad(angle3))
-
-
 
 def inverseKinematics(x,y,L1,L2):
     costh2 = (x**2 + y**2-L1**2-L2**2)/(2 * L1 * L2)
@@ -60,7 +57,7 @@ def convert_encoder_counts_to_degrees(encoder_counts):
 def getNumberofTimeSteps(time_taken,time_step):
     return int(np.ceil(time_taken/time_step))
 
-def circleGeneration2DoF(L1,L2,circle_radius,time_taken,time_step):
+def circleGeneration2DoF(L1,L2,circle_radius,x_centre,time_taken,time_step):
     theta1 = np.array([])
     theta2 = np.array([])
     motor_counts1 = np.array([])
@@ -84,7 +81,16 @@ def circleGeneration2DoF(L1,L2,circle_radius,time_taken,time_step):
 
     return motor_counts1, motor_counts2
 
-def triangleGeneration2DoF(L1, L2, triangle_side_length, time_taken, time_step):
+def getTriangleVertices(x_centre,y_centre,triangle_side_length):
+    triangle_radius = triangle_side_length / np.sqrt(3)
+    angle1, angle2, angle3 = 0, 120, 240  # Degrees from the center
+    x_t1, y_t1 = x_centre + triangle_radius * np.cos(np.deg2rad(angle1)), y_centre + triangle_radius * np.sin(np.deg2rad(angle1))
+    x_t2, y_t2 = x_centre + triangle_radius * np.cos(np.deg2rad(angle2)), y_centre + triangle_radius * np.sin(np.deg2rad(angle2))
+    x_t3, y_t3 = x_centre + triangle_radius * np.cos(np.deg2rad(angle3)), y_centre + triangle_radius * np.sin(np.deg2rad(angle3))
+    return [(x_t1, y_t1), (x_t2, y_t2), (x_t3, y_t3), (x_t1, y_t1)] 
+
+
+def triangleGeneration2DoF(L1, L2, vertices, time_taken, time_step):
     theta1 = np.array([])
     theta2 = np.array([])
     motor_counts1 = np.array([])
@@ -92,7 +98,6 @@ def triangleGeneration2DoF(L1, L2, triangle_side_length, time_taken, time_step):
 
     N = getNumberofTimeSteps(time_taken, time_step)
     segment_points = int(N / 3) 
-    vertices = [(x_t1, y_t1), (x_t2, y_t2), (x_t3, y_t3), (x_t1, y_t1)] 
 
     for i in range(3):
         start_x, start_y = vertices[i]
@@ -140,7 +145,6 @@ def circleGeneration1DoF(motor_counts,sweep_angle=360,time_taken=3,time_step=tim
     motor_counts = np.append(motor_counts,positions)
     return motor_counts
 
-# TODO simulate using the motor counts info to recreate circle
 
 def shape_recreation(motor_counts1,motor_counts2):
     x_values,y_values = [0],[0]
@@ -224,7 +228,7 @@ def draw_cases(shape_input):
             motor_counts1 = np.array([motor_counts1_start])
             motor_counts2 = np.array([motor_counts2_start])
 
-            motor_counts1circle, motor_counts2circle = circleGeneration2DoF(L1,L2,circle_radius,2,time_step)
+            motor_counts1circle, motor_counts2circle = circleGeneration2DoF(L1,L2,circle_radius,x_centre_circle,time_taken_circle,time_step)
             print(convert_encoder_counts_to_degrees(motor_counts1circle[0]),convert_encoder_counts_to_degrees(motor_counts2circle[0]))
 
             motor_counts1 = wait_x_seconds_generation(2,motor_counts1)
@@ -306,8 +310,16 @@ def draw_cases(shape_input):
 
         # Triangle 
         elif shape_input == "triangle":
+            vertices = getTriangleVertices(x_centre_triangle,y_centre_triangle,triangle_side_length)
+            motor_counts1triangle, motor_counts2triangle = triangleGeneration2DoF(L1,L2,vertices,time_taken_triangle,time_step)
 
-            motor_counts1triangle, motor_counts2triangle = triangleGeneration2DoF(L1,L2,triangle_radius,2,time_step)
+            motor_counts1_start = convert_degrees_to_encoder_counts(90)
+            motor_counts2_start = convert_degrees_to_encoder_counts(0)
+
+
+            motor_counts1 = np.array([motor_counts1_start])
+            motor_counts2 = np.array([motor_counts2_start])
+
 
             print(convert_encoder_counts_to_degrees(motor_counts1triangle[0]),convert_encoder_counts_to_degrees(motor_counts2triangle[0]))
 
@@ -376,6 +388,6 @@ def draw_cases(shape_input):
         return None, None
     
 
-draw_cases(shape_input)
+draw_cases('triangle')
 
 

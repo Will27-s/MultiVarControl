@@ -2,6 +2,7 @@
 #include "functionDefinition.h"
 //#include "1DoFCircleReferenceSignals.h"
 #include "2DoFCircleReferenceSignals.h"
+#include "2DoFTriangleReferenceSignals.h"
 
 
 // Define Encoder pins, PWM pin, and motor driver pins
