@@ -15,6 +15,7 @@ counts_per_degree = encoder_steps_per_revolution / 360
 
 circle_radius = 49   
 triangle_side_length = 110
+square_length = 70
 
 def forwardKinematics(th1,th2,L1,L2):
     x = L1 * np.cos(np.deg2rad(th1)) + L2 * np.cos(np.deg2rad(th1+th2))
@@ -29,14 +30,14 @@ time_taken_square = 8
 max_speed = None # to be added for acceleration
 
 #Circle Parameters
-x_centre_circle,y_centre_circle = forwardKinematics(45,90,L1,L2) # Using forward kinematics to define centre position
+x_centre_circle,y_centre_circle = forwardKinematics(100,45,L1,L2) # Using forward kinematics to define centre position
 x_centre_triangle,y_centre_triangle = forwardKinematics(45,90,L1,L2) # Using forward kinematics to define centre position
 x_centre_square,y_centre_square = forwardKinematics(45,90,L1,L2) # Using forward kinematics to define centre position
 
 
 #Triangle Parameters 
 
-def inverseKinematics(x,y,L1,L2):
+def inverseKinematics(x,y,L1=L1,L2=L2):
     costh2 = (x**2 + y**2-L1**2-L2**2)/(2 * L1 * L2)
     sinth2 = np.sqrt(1-costh2**2)
     theta2 = np.arctan2(sinth2,costh2)
@@ -80,6 +81,43 @@ def circleGeneration2DoF(L1,L2,circle_radius,x_centre,time_taken,time_step):
 
 
     return motor_counts1, motor_counts2
+
+def getSquareCoords(squareCentre_x,squareCentre_y,squareLength=square_length):
+    x1 = squareCentre_x + squareLength/2
+    y1 = squareCentre_y + squareLength/2
+    x2 = x1 - squareLength
+    y2 = y1
+    x3 = x2
+    y3 = y2 - squareLength
+    x4 = x3 + squareLength
+    y4 = y3
+    x5 = x1
+    y5 = y1
+    x_coords = np.array([x1,x2,x3,x4,x5])
+    y_coords = np.array([y1,y2,y3,y4,y5])
+    return x_coords,y_coords
+
+def squareReferenceGeneration(x_coords,y_coords,time_taken):
+    motor_counts1square = np.array([])
+    motor_counts2square = np.array([])
+
+    for i, val in enumerate(x_coords[:-1]):
+        xStart, yStart, xEnd, yEnd = x_coords[i], y_coords[i], x_coords[i+1], y_coords[i+1]
+        xPositionArray = get_to_x_position(xStart,xEnd,time_taken/4)
+        yPositionArray = get_to_x_position(yStart,yEnd,time_taken/4)
+        motor1EncoderValues = np.array([])
+        motor2EncoderValues = np.array([])
+        for xPos,yPos in zip(xPositionArray,yPositionArray):
+            th1, th2 = inverseKinematics(xPos,yPos)
+            en1 = convert_degrees_to_encoder_counts(np.rad2deg(th1))
+            en2 = convert_degrees_to_encoder_counts(np.rad2deg(th2))
+            motor1EncoderValues = np.append(motor1EncoderValues,en1)
+            motor2EncoderValues = np.append(motor2EncoderValues,en2)
+        motor_counts1square = np.append(motor_counts1square,motor1EncoderValues)
+        motor_counts2square = np.append(motor_counts2square,motor2EncoderValues)
+    return motor_counts1square,motor_counts2square
+
+
 
 def getTriangleVertices(x_centre,y_centre,triangle_side_length):
     triangle_radius = triangle_side_length / np.sqrt(3)
@@ -263,11 +301,11 @@ def draw_cases(shape_input):
             path1 = r'motor12DoFGeneration.txt'
             path2 = r'motor22DoFGeneration.txt'
 
-            save_file(motor_counts1,path1,'circle')
-            save_file(motor_counts2,path2,'circle')
+            save_file(motor_counts1,path1,shape_input)
+            save_file(motor_counts2,path2,shape_input)
 
             header_path = '2DoFCircleReferenceSignals.h'
-            create_header_file(motor_counts1,motor_counts2,header_path, 'circle')
+            create_header_file(motor_counts1,motor_counts2,header_path, shape_input)
 
             # Plotting
             time = get_time_array(motor_counts1)
@@ -357,11 +395,11 @@ def draw_cases(shape_input):
             path1 = r'motor12DoFGeneration.txt'
             path2 = r'motor22DoFGeneration.txt'
 
-            save_file(motor_counts1,path1,'triangle')
-            save_file(motor_counts2,path2,'triangle')
+            save_file(motor_counts1,path1,shape_input)
+            save_file(motor_counts2,path2, shape_input)
 
             header_path = '2DoFTriangleReferenceSignals.h'
-            create_header_file(motor_counts1,motor_counts2,header_path, 'triangle')
+            create_header_file(motor_counts1,motor_counts2,header_path, shape_input)
 
             # Plotting
             time = get_time_array(motor_counts1)
@@ -376,9 +414,66 @@ def draw_cases(shape_input):
 
         elif shape_input == "square":
             
-            ### TO BE ADDED
+            # Square
+            x_coords, y_coords = getSquareCoords(x_centre_square,y_centre_square,square_length)
+            print('xcoords', x_coords)
+            motor_counts1_start = convert_degrees_to_encoder_counts(90)
+            motor_counts2_start = convert_degrees_to_encoder_counts(0)
 
-            return None, None
+
+            motor_counts1 = np.array([motor_counts1_start])
+            motor_counts2 = np.array([motor_counts2_start])
+
+            motor_counts1square, motor_counts2square = squareReferenceGeneration(x_coords,y_coords,time_taken_square)
+
+
+            motor_counts1 = wait_x_seconds_generation(2,motor_counts1)
+            motor_counts2 = wait_x_seconds_generation(2,motor_counts2)
+
+            # Get's to the start position of the circle from completely straight
+            motor_counts1 = np.append(motor_counts1,get_to_x_position(motor_counts1_start,motor_counts1square[0],time_taken=3))
+            motor_counts2 = np.append(motor_counts2,get_to_x_position(motor_counts2_start,motor_counts2square[0],time_taken=3))
+
+            motor_counts1 = wait_x_seconds_generation(2,motor_counts1)
+            motor_counts2 = wait_x_seconds_generation(2,motor_counts2)
+
+            # Adds circle to arrays
+            motor_counts1 = np.append(motor_counts1,motor_counts1square)
+            motor_counts2 = np.append(motor_counts2,motor_counts2square)
+
+            motor_counts1 = wait_x_seconds_generation(2,motor_counts1)
+            motor_counts2 = wait_x_seconds_generation(2,motor_counts2)
+            # Returns to the start position
+            motor_counts1 = np.append(motor_counts1,get_to_x_position(motor_counts1[-1],motor_counts1_start,time_taken=3))
+            motor_counts2 = np.append(motor_counts2,get_to_x_position(motor_counts2[-1],motor_counts2_start,time_taken=3))
+
+            motor_counts1 = wait_x_seconds_generation(2,motor_counts1)
+            motor_counts2 = wait_x_seconds_generation(2,motor_counts2)
+
+            # Check if arrays are equal length
+            print(motor_counts1.size,motor_counts2.size)
+            print("motor1 and motor2 are equal: ",motor_counts1.size==motor_counts2.size)
+
+            path1 = r'motor12DoFGeneration.txt'
+            path2 = r'motor22DoFGeneration.txt'
+
+            save_file(motor_counts1,path1,shape_input)
+            save_file(motor_counts2,path2,shape_input)
+
+            header_path = '2DoFSquareReferenceSignals.h'
+            create_header_file(motor_counts1,motor_counts2,header_path, shape_input)
+
+            # Plotting
+            time = get_time_array(motor_counts1)
+            plot_motor_position(time,motor_counts1,motor_counts2) 
+
+            x_recreated, y_recreated = shape_recreation(motor_counts1,motor_counts2)
+            plt.plot(x_recreated,y_recreated, '.')
+            plt.title("Square 2DOF")
+            plt.grid()
+            plt.axis('equal')
+            plt.show()
+
         
         else:
             raise ValueError("Invalid Shape Input")
@@ -388,6 +483,8 @@ def draw_cases(shape_input):
         return None, None
     
 
-draw_cases('triangle')
+draw_cases('circle')
+
+
 
 
