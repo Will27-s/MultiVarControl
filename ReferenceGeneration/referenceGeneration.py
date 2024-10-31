@@ -23,8 +23,7 @@ def forwardKinematics(th1,th2,L1,L2):
 time_taken = 10 #seconds
 x_centre = L1/2
 y_centre = L1+L2/2
-x_start, y_start = 0,0
-x_centre,y_centre = forwardKinematics(45,45,L1,L2) # Using forward kinematics to define centre position
+x_centre,y_centre = forwardKinematics(110,10,L1,L2) # Using forward kinematics to define centre position
 print(x_centre,y_centre)
 circle_radius = 49    
 
@@ -46,6 +45,8 @@ def inverseKinematics(x,y,L1,L2):
 def convert_degrees_to_encoder_counts(theta):
     return np.floor(theta * counts_per_degree)
 
+def convert_encoder_counts_to_degrees(encoder_counts):
+    return encoder_counts/counts_per_degree
 def getNumberofTimeSteps(time_taken,time_step):
     return int(np.ceil(time_taken/time_step))
 
@@ -175,6 +176,20 @@ def plot_motor_position(time,motor_counts1,motor_counts2):
 # Generation
 
 # Circle
+
+# motor_counts1_start = convert_degrees_to_encoder_counts(90)
+# motor_counts2_start = convert_degrees_to_encoder_counts(0)
+# motor1_end,motor2_end = forwardKinematics(0,45,L1,L2)
+
+# motor_counts1 = np.array([motor_counts1_start])
+# motor_counts2 = np.array([motor_counts2_start])
+
+
+# motor_counts1 = np.append(motor_counts1,get_to_x_position(motor_counts1_start,motor1_end,time_taken=5))
+# motor_counts2 = np.append(motor_counts2,get_to_x_position(motor_counts2_start,motor2_end,time_taken=5))
+
+
+
 motor_counts1_start = convert_degrees_to_encoder_counts(90)
 motor_counts2_start = convert_degrees_to_encoder_counts(0)
 
@@ -182,8 +197,8 @@ motor_counts2_start = convert_degrees_to_encoder_counts(0)
 motor_counts1 = np.array([motor_counts1_start])
 motor_counts2 = np.array([motor_counts2_start])
 
-
-motor_counts1circle, motor_counts2circle = circleGeneration2DoF(L1,L2,circle_radius,5,time_step)
+motor_counts1circle, motor_counts2circle = circleGeneration2DoF(L1,L2,circle_radius,2,time_step)
+print(convert_encoder_counts_to_degrees(motor_counts1circle[0]),convert_encoder_counts_to_degrees(motor_counts2circle[0]))
 
 motor_counts1 = wait_x_seconds_generation(2,motor_counts1)
 motor_counts2 = wait_x_seconds_generation(2,motor_counts2)
@@ -211,26 +226,28 @@ motor_counts2 = wait_x_seconds_generation(2,motor_counts2)
 
 # 1DoF Circle
 # Wait 2 seconds then Motor 1 circle for 6 seconds, wait 3 seconds motor2 circles for 4 seconds, wait 2 seconds, then both circles for 5 seconds
+
 '''
-motor_counts1 = np.array([])
-motor_counts2 = np.array([])
+motor_counts1 = np.array([motor_counts1_start])
+motor_counts2 = np.array([motor_counts2_start])
+
 motor_counts1 = wait_x_seconds_generation(2,motor_counts1)
 motor_counts2 = wait_x_seconds_generation(2,motor_counts2)
 
-motor_counts1 = circleGeneration1DoF(motor_counts1,time_taken=6)
+motor_counts1 = circleGeneration1DoF(motor_counts1,time_taken=6,sweep_angle=90)
 motor_counts2 = wait_x_seconds_generation(6,motor_counts2)
 
 motor_counts1 = wait_x_seconds_generation(3,motor_counts1)
 motor_counts2 = wait_x_seconds_generation(3,motor_counts2)
 
 motor_counts1 = wait_x_seconds_generation(4,motor_counts1)
-motor_counts2 = circleGeneration1DoF(motor_counts2,time_taken=4)
+motor_counts2 = circleGeneration1DoF(motor_counts2,time_taken=4,sweep_angle=90)
 
 motor_counts1 = wait_x_seconds_generation(2,motor_counts1)
 motor_counts2 = wait_x_seconds_generation(2,motor_counts2)
 
-motor_counts1 = circleGeneration1DoF(motor_counts1,time_taken=5)
-motor_counts2 = circleGeneration1DoF(motor_counts2,time_taken=5)
+# motor_counts1 = circleGeneration1DoF(motor_counts1,time_taken=5)
+# motor_counts2 = circleGeneration1DoF(motor_counts2,time_taken=5)
 '''
 
 # Check if arrays are equal length
