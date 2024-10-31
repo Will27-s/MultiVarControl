@@ -177,19 +177,6 @@ def plot_motor_position(time,motor_counts1,motor_counts2):
 
 # Circle
 
-# motor_counts1_start = convert_degrees_to_encoder_counts(90)
-# motor_counts2_start = convert_degrees_to_encoder_counts(0)
-# motor1_end,motor2_end = forwardKinematics(0,45,L1,L2)
-
-# motor_counts1 = np.array([motor_counts1_start])
-# motor_counts2 = np.array([motor_counts2_start])
-
-
-# motor_counts1 = np.append(motor_counts1,get_to_x_position(motor_counts1_start,motor1_end,time_taken=5))
-# motor_counts2 = np.append(motor_counts2,get_to_x_position(motor_counts2_start,motor2_end,time_taken=5))
-
-
-
 motor_counts1_start = convert_degrees_to_encoder_counts(90)
 motor_counts2_start = convert_degrees_to_encoder_counts(0)
 
@@ -205,8 +192,8 @@ motor_counts2 = wait_x_seconds_generation(2,motor_counts2)
 
 
 # Get's to the start position of the circle from completely straight
-motor_counts1 = np.append(motor_counts1,get_to_x_position(motor_counts1_start,motor_counts1circle[0],time_taken=3))
-motor_counts2 = np.append(motor_counts2,get_to_x_position(motor_counts2_start,motor_counts2circle[0],time_taken=3))
+motor_counts1 = np.append(motor_counts1,get_to_x_position(motor_counts1_start,motor_counts1circle[0],time_taken=1.5))
+motor_counts2 = np.append(motor_counts2,get_to_x_position(motor_counts2_start,motor_counts2circle[0],time_taken=1.5))
 
 motor_counts1 = wait_x_seconds_generation(2,motor_counts1)
 motor_counts2 = wait_x_seconds_generation(2,motor_counts2)
