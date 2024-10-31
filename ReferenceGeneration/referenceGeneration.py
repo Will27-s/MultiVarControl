@@ -24,12 +24,15 @@ time_taken = 10 #seconds
 x_centre = L1/2
 y_centre = L1+L2/2
 x_centre,y_centre = forwardKinematics(110,10,L1,L2) # Using forward kinematics to define centre position
-print(x_centre,y_centre)
+
 circle_radius = 49    
 
+#Square Case
+squareLength = 70
 
 
-def inverseKinematics(x,y,L1,L2):
+
+def inverseKinematics(x,y,L1=L1,L2=L2):
     costh2 = (x**2 + y**2-L1**2-L2**2)/(2 * L1 * L2)
     sinth2 = np.sqrt(1-costh2**2)
     theta2 = np.arctan2(sinth2,costh2)
@@ -171,25 +174,49 @@ def plot_motor_position(time,motor_counts1,motor_counts2):
 
     plt.show()
 
+def getSquareCoords(squareCentre_x,squareCentre_y,squareLength=squareLength):
+    x1 = squareCentre_x + squareLength/2
+    y1 = squareCentre_y + squareLength/2
+    x2 = x1 - squareLength
+    y2 = y1
+    x3 = x2
+    y3 = y2 - squareLength
+    x4 = x3 + squareLength
+    y4 = y3
+    x5 = x1
+    y5 = y1
+    x_coords = np.array([x1,x2,x3,x4,x5])
+    y_coords = np.array([y1,y2,y3,y4,y5])
+    return x_coords,y_coords
+
+def squareReferenceGeneration(x_coords,y_coords,time_taken):
+    motor_counts1square = np.array([])
+    motor_counts2square = np.array([])
+
+    for i, val in enumerate(x_coords[:-1]):
+        xStart, yStart, xEnd, yEnd = x_coords[i], y_coords[i], x_coords[i+1], y_coords[i+1]
+        xPositionArray = get_to_x_position(xStart,xEnd,time_taken/4)
+        yPositionArray = get_to_x_position(yStart,yEnd,time_taken/4)
+        motor1EncoderValues = np.array([])
+        motor2EncoderValues = np.array([])
+        for xPos,yPos in zip(xPositionArray,yPositionArray):
+            th1, th2 = inverseKinematics(xPos,yPos)
+            en1 = convert_degrees_to_encoder_counts(np.rad2deg(th1))
+            en2 = convert_degrees_to_encoder_counts(np.rad2deg(th2))
+            motor1EncoderValues = np.append(motor1EncoderValues,en1)
+            motor2EncoderValues = np.append(motor2EncoderValues,en2)
+        motor_counts1square = np.append(motor_counts1square,motor1EncoderValues)
+        motor_counts2square = np.append(motor_counts2square,motor2EncoderValues)
+    return motor_counts1square,motor_counts2square
+
 
 
 # Generation
 
-# Circle
-
-# motor_counts1_start = convert_degrees_to_encoder_counts(90)
-# motor_counts2_start = convert_degrees_to_encoder_counts(0)
-# motor1_end,motor2_end = forwardKinematics(0,45,L1,L2)
-
-# motor_counts1 = np.array([motor_counts1_start])
-# motor_counts2 = np.array([motor_counts2_start])
-
-
-# motor_counts1 = np.append(motor_counts1,get_to_x_position(motor_counts1_start,motor1_end,time_taken=5))
-# motor_counts2 = np.append(motor_counts2,get_to_x_position(motor_counts2_start,motor2_end,time_taken=5))
-
-
-
+# Square
+x_centre,y_centre = forwardKinematics(10,90,L1,L2)
+x_coords, y_coords = getSquareCoords(x_centre,y_centre,squareLength)
+print('xcoords', x_coords)
 motor_counts1_start = convert_degrees_to_encoder_counts(90)
 motor_counts2_start = convert_degrees_to_encoder_counts(0)
 
@@ -197,23 +224,22 @@ motor_counts2_start = convert_degrees_to_encoder_counts(0)
 motor_counts1 = np.array([motor_counts1_start])
 motor_counts2 = np.array([motor_counts2_start])
 
-motor_counts1circle, motor_counts2circle = circleGeneration2DoF(L1,L2,circle_radius,2,time_step)
-print(convert_encoder_counts_to_degrees(motor_counts1circle[0]),convert_encoder_counts_to_degrees(motor_counts2circle[0]))
+motor_counts1square, motor_counts2square = squareReferenceGeneration(x_coords,y_coords,8)
+
 
 motor_counts1 = wait_x_seconds_generation(2,motor_counts1)
 motor_counts2 = wait_x_seconds_generation(2,motor_counts2)
 
-
 # Get's to the start position of the circle from completely straight
-motor_counts1 = np.append(motor_counts1,get_to_x_position(motor_counts1_start,motor_counts1circle[0],time_taken=3))
-motor_counts2 = np.append(motor_counts2,get_to_x_position(motor_counts2_start,motor_counts2circle[0],time_taken=3))
+motor_counts1 = np.append(motor_counts1,get_to_x_position(motor_counts1_start,motor_counts1square[0],time_taken=3))
+motor_counts2 = np.append(motor_counts2,get_to_x_position(motor_counts2_start,motor_counts2square[0],time_taken=3))
 
 motor_counts1 = wait_x_seconds_generation(2,motor_counts1)
 motor_counts2 = wait_x_seconds_generation(2,motor_counts2)
 
 # Adds circle to arrays
-motor_counts1 = np.append(motor_counts1,motor_counts1circle)
-motor_counts2 = np.append(motor_counts2,motor_counts2circle)
+motor_counts1 = np.append(motor_counts1,motor_counts1square)
+motor_counts2 = np.append(motor_counts2,motor_counts2square)
 
 motor_counts1 = wait_x_seconds_generation(2,motor_counts1)
 motor_counts2 = wait_x_seconds_generation(2,motor_counts2)
@@ -223,6 +249,43 @@ motor_counts2 = np.append(motor_counts2,get_to_x_position(motor_counts2[-1],moto
 
 motor_counts1 = wait_x_seconds_generation(2,motor_counts1)
 motor_counts2 = wait_x_seconds_generation(2,motor_counts2)
+
+
+# Circle
+
+# motor_counts1_start = convert_degrees_to_encoder_counts(90)
+# motor_counts2_start = convert_degrees_to_encoder_counts(0)
+
+
+# motor_counts1 = np.array([motor_counts1_start])
+# motor_counts2 = np.array([motor_counts2_start])
+
+# motor_counts1circle, motor_counts2circle = circleGeneration2DoF(L1,L2,circle_radius,2,time_step)
+# print(convert_encoder_counts_to_degrees(motor_counts1circle[0]),convert_encoder_counts_to_degrees(motor_counts2circle[0]))
+
+# motor_counts1 = wait_x_seconds_generation(2,motor_counts1)
+# motor_counts2 = wait_x_seconds_generation(2,motor_counts2)
+
+
+# # Get's to the start position of the circle from completely straight
+# motor_counts1 = np.append(motor_counts1,get_to_x_position(motor_counts1_start,motor_counts1circle[0],time_taken=3))
+# motor_counts2 = np.append(motor_counts2,get_to_x_position(motor_counts2_start,motor_counts2circle[0],time_taken=3))
+
+# motor_counts1 = wait_x_seconds_generation(2,motor_counts1)
+# motor_counts2 = wait_x_seconds_generation(2,motor_counts2)
+
+# # Adds circle to arrays
+# motor_counts1 = np.append(motor_counts1,motor_counts1circle)
+# motor_counts2 = np.append(motor_counts2,motor_counts2circle)
+
+# motor_counts1 = wait_x_seconds_generation(2,motor_counts1)
+# motor_counts2 = wait_x_seconds_generation(2,motor_counts2)
+# # Returns to the start position
+# motor_counts1 = np.append(motor_counts1,get_to_x_position(motor_counts1[-1],motor_counts1_start,time_taken=3))
+# motor_counts2 = np.append(motor_counts2,get_to_x_position(motor_counts2[-1],motor_counts2_start,time_taken=3))
+
+# motor_counts1 = wait_x_seconds_generation(2,motor_counts1)
+# motor_counts2 = wait_x_seconds_generation(2,motor_counts2)
 
 # 1DoF Circle
 # Wait 2 seconds then Motor 1 circle for 6 seconds, wait 3 seconds motor2 circles for 4 seconds, wait 2 seconds, then both circles for 5 seconds
@@ -269,6 +332,11 @@ plot_motor_position(time,motor_counts1,motor_counts2) # Need to close plot windo
 
 x_recreated, y_recreated = shape_recreation(motor_counts1,motor_counts2)
 plt.plot(x_recreated,y_recreated, '.')
+plt.grid()
+plt.axis('equal')
+plt.show()
+
+plt.plot(x_coords,y_coords)
 plt.grid()
 plt.axis('equal')
 plt.show()
