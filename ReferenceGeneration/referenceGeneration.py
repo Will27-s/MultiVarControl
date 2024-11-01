@@ -27,7 +27,8 @@ def forwardKinematics(th1,th2,L1,L2):
 time_taken_circle = 2
 time_taken_triangle = 4
 time_taken_square = 8
-max_speed = None # to be added for acceleration
+max_speed = 20   # Example max speed, adjust as needed
+max_accel = 10   # Example max acceleration, adjust as needed
 
 #Circle Parameters
 x_centre_circle,y_centre_circle = forwardKinematics(100,45,L1,L2) # Using forward kinematics to define centre position
@@ -117,6 +118,71 @@ def squareReferenceGeneration(x_coords,y_coords,time_taken):
         motor_counts2square = np.append(motor_counts2square,motor2EncoderValues)
     return motor_counts1square,motor_counts2square
 
+def squareReferenceGenerationWithVelocityProfiles(x_centre,y_centre,square_length=square_length,max_speed=max_speed,max_accel=max_accel,time_step=time_step):
+   
+    
+    # Time calculations
+    t0 = 0
+    t1 = np.ceil(max_speed / (max_accel * time_step)) * time_step
+    t2 = np.ceil(square_length / (max_speed * time_step)) * time_step
+    t3 = t2 + t1
+
+    # Discrete time points
+    t0123_dt = np.round(np.array([t0, t1, t2, t3]) / time_step).astype(int) + 1
+    nt = t0123_dt[-1]
+    t = np.arange(0, nt) * time_step
+
+    # Recalculate max_speed and max_accel for consistent results
+    max_speed = square_length / t2
+    max_accel = max_speed / t1
+
+    # Velocity profile
+    v = np.zeros(nt)
+    v[t0123_dt[0]:t0123_dt[1]] = max_accel * t[t0123_dt[0]:t0123_dt[1]]
+    v[t0123_dt[1]:t0123_dt[2]] = max_speed
+    v[t0123_dt[2]:t0123_dt[3]] = max_speed - max_accel * (t[t0123_dt[2]:t0123_dt[3]] - t[t0123_dt[2]])
+
+    # Position calculation using trapezoidal integration
+    s = np.cumsum((np.append([0], v[:-1]) + np.append([0], v[1:])) / 2) * time_step
+
+    # Path coordinates
+    x = np.zeros(nt * 5)
+    y = np.zeros(nt * 5)
+
+    # Assign x coordinates for each side of the square
+    x[:nt] = s + x_centre - square_length / 2
+    x[nt:2 * nt] = x_centre + square_length / 2
+    x[2 * nt:3 * nt] = x_centre + square_length / 2 - s
+    x[3 * nt:4 * nt] = x_centre - square_length / 2
+    x[4 * nt:5 * nt] = x[:nt]
+
+    # Assign y coordinates for each side of the square
+    y[:nt] = y_centre - square_length / 2
+    y[nt:2 * nt] = s + y_centre - square_length / 2
+    y[2 * nt:3 * nt] = y_centre + square_length / 2
+    y[3 * nt:4 * nt] = y_centre + square_length / 2 - s
+    y[4 * nt:5 * nt] = y[:nt]
+
+    # Repeat velocity profile for the full drawing cycle
+    v = np.tile(v, 5)
+    nt_draw = 5 * nt
+    xPositionArray =  np.array(x)
+    yPositionArray = np.array(y)
+    motor1EncoderValues = np.array([])
+    motor2EncoderValues = np.array([])
+    plt.plot(xPositionArray,yPositionArray)
+    plt.grid()
+    plt.axis('equal')
+    plt.show()
+    for xPos,yPos in zip(xPositionArray,yPositionArray):
+        th1, th2 = inverseKinematics(xPos,yPos)
+        en1 = convert_degrees_to_encoder_counts(np.rad2deg(th1))
+        en2 = convert_degrees_to_encoder_counts(np.rad2deg(th2))
+        motor1EncoderValues = np.append(motor1EncoderValues,en1)
+        motor2EncoderValues = np.append(motor2EncoderValues,en2)
+    return motor1EncoderValues,motor2EncoderValues
+    
+
 
 
 def getTriangleVertices(x_centre,y_centre,triangle_side_length):
@@ -156,6 +222,76 @@ def triangleGeneration2DoF(L1, L2, vertices, time_taken, time_step):
             motor_counts2 = np.append(motor_counts2, e2)
 
     return motor_counts1, motor_counts2
+
+def triangleReferenceGenerationWithVelocityProfiles(vertices,triangle_length=triangle_side_length,max_speed=max_speed,max_accel=max_accel,time_step=time_step):
+   
+    
+    # Time calculations
+    t0 = 0
+    t1 = np.ceil(max_speed / (max_accel * time_step)) * time_step
+    t2 = np.ceil(triangle_length / (max_speed * time_step)) * time_step
+    t3 = t2 + t1
+
+    # Discrete time points
+    t0123_dt = np.round(np.array([t0, t1, t2, t3]) / time_step).astype(int) + 1
+    nt = t0123_dt[-1]
+    t = np.arange(0, nt) * time_step
+
+    # Recalculate max_speed and max_accel for consistent results
+    max_speed = triangle_length / t2
+    max_accel = max_speed / t1
+
+    # Velocity profile
+    v = np.zeros(nt)
+    v[t0123_dt[0]:t0123_dt[1]] = max_accel * t[t0123_dt[0]:t0123_dt[1]]
+    v[t0123_dt[1]:t0123_dt[2]] = max_speed
+    v[t0123_dt[2]:t0123_dt[3]] = max_speed - max_accel * (t[t0123_dt[2]:t0123_dt[3]] - t[t0123_dt[2]])
+
+    # Position calculation using trapezoidal integration
+    s = np.cumsum((np.append([0], v[:-1]) + np.append([0], v[1:])) / 2) * time_step
+    print(s[-1])
+    # Path coordinates
+    x = np.zeros(nt * 4)
+    y = np.zeros(nt * 4)
+
+    
+    # Assign x coordinates for each side of the square
+    x[:nt] = (s*np.cos(np.deg2rad(60))) + vertices[0][0]
+    x[nt:2 * nt] = (s*np.cos(np.deg2rad(-60))) + vertices[1][0]
+    x[2 * nt:3 * nt] = (-s) + vertices[2][0]
+    x[3 * nt:4 * nt] = x[:nt]
+    for i in range(2):
+        directionVector = np.array([vertices[i][0] - vertices[i+1][0],vertices[i][1] - vertices[i+1][1]])
+        normalDirection = directionVector/np.linalg.norm(directionVector)
+        x[i*nt:(i+1) * nt] = (vertices[i][0] + normalDirection * s)[0]
+        y[i*nt:(i+1) * nt] = (vertices[i][0] + normalDirection * s)[1]
+
+    # Assign y coordinates for each side of the square
+    y[:nt] = (s*np.sin(np.deg2rad(60))) + vertices[0][1]
+    y[nt:2 * nt] = (s*np.sin(np.deg2rad(-60))) + vertices[1][1]
+    y[2 * nt:3 * nt] = vertices[2][1]
+    y[3 * nt:4 * nt] = y[:nt]
+
+    # Repeat velocity profile for the full drawing cycle
+    v = np.tile(v, 5)
+    nt_draw = 5 * nt
+    xPositionArray =  np.array(x)
+    yPositionArray = np.array(y)
+    motor1EncoderValues = np.array([])
+    motor2EncoderValues = np.array([])
+    plt.plot(xPositionArray,yPositionArray)
+    plt.grid()
+    plt.axis('equal')
+    plt.show()
+    for xPos,yPos in zip(xPositionArray,yPositionArray):
+        th1, th2 = inverseKinematics(xPos,yPos)
+        en1 = convert_degrees_to_encoder_counts(np.rad2deg(th1))
+        en2 = convert_degrees_to_encoder_counts(np.rad2deg(th2))
+        motor1EncoderValues = np.append(motor1EncoderValues,en1)
+        motor2EncoderValues = np.append(motor2EncoderValues,en2)
+    return motor1EncoderValues,motor2EncoderValues
+    
+
 
 def get_to_x_position(start_position,end_position,time_taken,time_step=time_step):
     N = getNumberofTimeSteps(time_taken,time_step)
@@ -349,7 +485,16 @@ def draw_cases(shape_input):
         # Triangle 
         elif shape_input == "triangle":
             vertices = getTriangleVertices(x_centre_triangle,y_centre_triangle,triangle_side_length)
-            motor_counts1triangle, motor_counts2triangle = triangleGeneration2DoF(L1,L2,vertices,time_taken_triangle,time_step)
+            #motor_counts1triangle, motor_counts2triangle = triangleGeneration2DoF(L1,L2,vertices,time_taken_triangle,time_step)
+            motor_counts1triangle, motor_counts2triangle = triangleReferenceGenerationWithVelocityProfiles(vertices)
+            fig,ax1 = plt.subplots()
+            for i,v in enumerate(vertices):
+                ax1.plot(v[0],v[1],label=i,marker = 'o')
+                
+            ax1.legend()
+            plt.grid()
+            plt.axis('equal')
+            plt.show()
 
             motor_counts1_start = convert_degrees_to_encoder_counts(90)
             motor_counts2_start = convert_degrees_to_encoder_counts(0)
@@ -424,7 +569,8 @@ def draw_cases(shape_input):
             motor_counts1 = np.array([motor_counts1_start])
             motor_counts2 = np.array([motor_counts2_start])
 
-            motor_counts1square, motor_counts2square = squareReferenceGeneration(x_coords,y_coords,time_taken_square)
+            #motor_counts1square, motor_counts2square = squareReferenceGeneration(x_coords,y_coords,time_taken_square)
+            motor_counts1square, motor_counts2square = squareReferenceGenerationWithVelocityProfiles(x_centre_square,y_centre_square,square_length,max_speed,max_accel)
 
 
             motor_counts1 = wait_x_seconds_generation(2,motor_counts1)
@@ -483,7 +629,7 @@ def draw_cases(shape_input):
         return None, None
     
 
-draw_cases('circle')
+draw_cases('triangle')
 
 
 
