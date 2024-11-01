@@ -249,32 +249,32 @@ def triangleReferenceGenerationWithVelocityProfiles(vertices,triangle_length=tri
 
     # Position calculation using trapezoidal integration
     s = np.cumsum((np.append([0], v[:-1]) + np.append([0], v[1:])) / 2) * time_step
-    print(s[-1])
+    
     # Path coordinates
     x = np.zeros(nt * 4)
     y = np.zeros(nt * 4)
 
     
     # Assign x coordinates for each side of the square
-    x[:nt] = (s*np.cos(np.deg2rad(60))) + vertices[0][0]
-    x[nt:2 * nt] = (s*np.cos(np.deg2rad(-60))) + vertices[1][0]
-    x[2 * nt:3 * nt] = (-s) + vertices[2][0]
-    x[3 * nt:4 * nt] = x[:nt]
-    for i in range(2):
-        directionVector = np.array([vertices[i][0] - vertices[i+1][0],vertices[i][1] - vertices[i+1][1]])
+    
+    print(s.shape)
+    # Using direction vectors etc. to find the distance along the line
+    for i in range(3):
+        directionVector = np.array([-vertices[i][0] + vertices[i+1][0],-vertices[i][1] + vertices[i+1][1]]) # TODO Swap around for readability cba
         normalDirection = directionVector/np.linalg.norm(directionVector)
-        x[i*nt:(i+1) * nt] = (vertices[i][0] + normalDirection * s)[0]
-        y[i*nt:(i+1) * nt] = (vertices[i][0] + normalDirection * s)[1]
+        x[i*nt:(i+1) * nt] = (vertices[i][0] + normalDirection[0] * s)
+        y[i*nt:(i+1) * nt] = (vertices[i][1] + normalDirection[1] * s)
 
-    # Assign y coordinates for each side of the square
-    y[:nt] = (s*np.sin(np.deg2rad(60))) + vertices[0][1]
-    y[nt:2 * nt] = (s*np.sin(np.deg2rad(-60))) + vertices[1][1]
-    y[2 * nt:3 * nt] = vertices[2][1]
+    
+    x[3 * nt:4 * nt] = x[:nt]
     y[3 * nt:4 * nt] = y[:nt]
+        
+
+    
 
     # Repeat velocity profile for the full drawing cycle
     v = np.tile(v, 5)
-    nt_draw = 5 * nt
+    nt_draw = 4 * nt
     xPositionArray =  np.array(x)
     yPositionArray = np.array(y)
     motor1EncoderValues = np.array([])
@@ -487,14 +487,8 @@ def draw_cases(shape_input):
             vertices = getTriangleVertices(x_centre_triangle,y_centre_triangle,triangle_side_length)
             #motor_counts1triangle, motor_counts2triangle = triangleGeneration2DoF(L1,L2,vertices,time_taken_triangle,time_step)
             motor_counts1triangle, motor_counts2triangle = triangleReferenceGenerationWithVelocityProfiles(vertices)
-            fig,ax1 = plt.subplots()
-            for i,v in enumerate(vertices):
-                ax1.plot(v[0],v[1],label=i,marker = 'o')
-                
-            ax1.legend()
-            plt.grid()
-            plt.axis('equal')
-            plt.show()
+            
+            
 
             motor_counts1_start = convert_degrees_to_encoder_counts(90)
             motor_counts2_start = convert_degrees_to_encoder_counts(0)
