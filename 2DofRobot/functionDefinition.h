@@ -6,7 +6,7 @@
     float Bang_Bang_Control(int e, int u_amplitude);
     float Proportional_Control(int e, float kp);
     float Proportional_Control(int e, float kp);
-    float PID_Control(int e, int e_sum, int e_prev,int e_windup_limit , float kp, float ki, float kd);
+    float PID_Control(int e, int e_sum, int e_prev , float kp, float ki, float kd);
 
     float conditional_integration(int e, int e_sum, int e_windup_limit);
     float set_u_to_max_if_out_of_bounds(float u);

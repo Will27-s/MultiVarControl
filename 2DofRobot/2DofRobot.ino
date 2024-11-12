@@ -1,9 +1,9 @@
 #include <SimplyAtomic.h>  // For the position read, to avoid missed counts
 #include "functionDefinition.h"
 //#include "1DoFCircleReferenceSignals.h"
-#include "2DoFCircleReferenceSignals.h"
+//#include "2DoFCircleReferenceSignals.h"
 //#include "2DoFTriangleReferenceSignals.h"
-//#include "2DoFSquareReferenceSignals.h"
+#include "2DoFSquareReferenceSignals.h"
 
 
 
@@ -41,11 +41,11 @@ int rotations = 0; // TODO Make a static var in roation ref sig func
 float time_per_rotation = 5000;  // time allowed per rotation, in milliseconds for rotate reference
 float delta_time_micros = 2000; //microseconds
 float delta_time_seconds = delta_time_micros/1e6;
-
+bool isAtStartPoint = false;
 
 // PID Control Values
-float kp = 18.0;
-float ki = 129.0;
+float kp = 25;
+float ki = 180.0;
 float kd = 0.79;
 
 float kp1 = kp;
@@ -62,6 +62,7 @@ float kd2 = kd;
 bool initial_position = false;
 int ref1,ref2;
 int ref_index = 0;
+int ref_toStartIndex = 0;
 
   
 
@@ -211,7 +212,28 @@ void loop() {
   //ref1 = rotate_every_time_per_rotation_ref_signal();
   //ref2 = rotate_every_time_per_rotation_ref_signal();
 
+  // TODO create a header file containing to start information
+  // Ensure to include ref_toStartLength var
+  // Add a wait 5 seconds to give time to rub out whiteboard then just keep repeating the drawing phase
+  if (isAtStartPoint == false) {
+    ref1 = ref1_toStart[ref_toStartIndex];
+    ref2 = ref2_toStart[ref_toStartIndex];
+    if (ref_toStartIndex <= ref_toStartLength) {
+      ref_index++;
+    } else {
+      isAtStartPoint = true;
 
+    }
+  }
+  if (isAtStartPoint == true) {
+    ref1 = ref1_circle[ref_index];
+    ref2 = ref2_circle[ref_index];
+    if (ref_index <= ref_length) {
+      ref_index++;
+    } else {
+      ref_index = 0;
+    }
+  }
   
 
   ref1 = ref1_circle[ref_index];
@@ -260,6 +282,7 @@ void loop() {
   //motor2.set_u(0);
   //motor2.u = 150;
 
+  // TODO: Do system identification with this
   // Step Change
   //motor1.set_u(Step_Input(3));
   //motor2.set_u(Step_Input(3));

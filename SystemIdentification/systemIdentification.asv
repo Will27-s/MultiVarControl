@@ -1,11 +1,14 @@
-filename = "recorded_data.csv";
+filename1 = "recorded_data.csv";
+filename2 = "recorded_data.csv";
+startIdx = 1000;
+A = readmatrix(filename1);
+B = readmatrix(filename2);
 
-A = readmatrix(filename);
 dt = 2000/1e6;
-pos1 = A(1000:end,1);
-pos2 = A(1000:end,2);
-in1 = A(1000:end,3);
-in2 = A(1000:end,4);
+pos1 = A(startIdx:end,1);
+pos2 = B(startIdx:end,2);
+in1 = A(startIdx:end,3);
+in2 = B(startIdx:end,4);
 
 speed1 = [0;diff(pos1)/dt];
 speed2 = [0;diff(pos2)/dt];
@@ -33,7 +36,7 @@ Lambda2 = sys2.Numerator * T1
 Ts = 0.35;
 [kp1,ki1,kd2] = getControlConstants(T1, Lambda1, Ts)
 
-[kp2,ki2,kd2] = getControlConstants(T1, Lambda1, Ts)
+[kp2,ki2,kd2] = getControlConstants(T2, Lambda2, Ts)
 
 function [kp, ki, kd] = getControlConstants(T, Lambda, Ts)
     % getControlConstants calculates control constants for a control system.
