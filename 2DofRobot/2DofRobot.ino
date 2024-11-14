@@ -2,8 +2,8 @@
 #include "functionDefinition.h"
 //#include "1DoFCircleReferenceSignals.h"
 //#include "2DoFCircleReferenceSignals.h"
-//#include "2DoFTriangleReferenceSignals.h"
-#include "2DoFSquareReferenceSignals.h"
+#include "2DoFTriangleReferenceSignals.h"
+//#include "2DoFSquareReferenceSignals.h"
 
 
 
@@ -32,7 +32,7 @@ int interval_count = 0;
 float interval_start = 0;
 float ref = 0;
             // u is the control signal
-int u_amplitude = 200 ;  // control signal amplitude (must be < 256)
+int u_amplitude = 50 ;  // control signal amplitude (must be < 256)
 long time_start = 0;
 long loop_start_time = 0;
 float counts_per_rotation = 131.25 * 16;
@@ -44,7 +44,7 @@ float delta_time_seconds = delta_time_micros/1e6;
 bool isAtStartPoint = false;
 
 // PID Control Values
-float kp = 25;
+float kp = 35;
 float ki = 180.0;
 float kd = 0.79;
 
@@ -198,9 +198,9 @@ void setup() {
   
   attachInterrupt(digitalPinToInterrupt(motor1.ENCA), readEncoderMot1, RISING);
   attachInterrupt(digitalPinToInterrupt(motor2.ENCA), readEncoderMot2, RISING);
-
-  motor1.set_posi(ref1_circle[0]);
-  motor2.set_posi(ref2_circle[0]);
+  
+  motor1.set_posi(ref1_toStart[0]);
+  motor2.set_posi(ref2_toStart[0]);
   time_start = millis();
 }
 
@@ -218,9 +218,9 @@ void loop() {
   if (isAtStartPoint == false) {
     ref1 = ref1_toStart[ref_toStartIndex];
     ref2 = ref2_toStart[ref_toStartIndex];
-    if (ref_toStartIndex <= ref_toStartLength) {
-      ref_index++;
-    } else {
+    if (ref_toStartIndex < ref_toStartLength) {
+      ref_toStartIndex++;
+    } if ( ref_toStartIndex >= ref_toStartLength) {
       isAtStartPoint = true;
 
     }
@@ -236,14 +236,7 @@ void loop() {
   }
   
 
-  ref1 = ref1_circle[ref_index];
-  ref2 = ref2_circle[ref_index];
-  if (ref_index <= ref_length) {
-    ref_index++;
-  } else {
-    ref_index = 0;
-  }
-
+  
   motor1.set_error_prev(ref1);
   motor2.set_error_prev(ref2);
 
@@ -284,15 +277,16 @@ void loop() {
 
   // TODO: Do system identification with this
   // Step Change
-  //motor1.set_u(Step_Input(3));
-  //motor2.set_u(Step_Input(3));
+  //motor1.set_u(Step_Input(1.5));
+  //motor2.set_u(Step_Input(1.5));
 
   // Drive Motor Based on u value
   motor1.set_motor(motor1.get_u());
   motor2.set_motor(motor2.get_u());
 
 
-  serial_plotting(); // Function in DataRecording.ino
+  // serial_plotting(); // Function in DataRecording.ino
+  record_pos_data();
 
   
   

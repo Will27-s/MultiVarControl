@@ -34,7 +34,7 @@ T2 = 1/sys2.Denominator(2)
 Lambda2 = sys2.Numerator * T1
 
 Ts = 0.35;
-[kp1,ki1,kd2] = getControlConstants(T1, Lambda1, Ts)
+[kp1,ki1,kd1] = getControlConstants(T1, Lambda1, Ts)
 
 [kp2,ki2,kd2] = getControlConstants(T2, Lambda2, Ts)
 
