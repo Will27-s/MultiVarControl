@@ -1,11 +1,19 @@
 void record_pos_data() {
+  Serial.print(motor1.get_u());
+  Serial.print(",");
   Serial.print(motor1.get_pos());
+  Serial.print(",");
+  Serial.print(motor1.get_error());
+  Serial.print(",");
+  Serial.print(ref1);
+  Serial.print(",");
+  Serial.print(motor2.get_u());
   Serial.print(",");
   Serial.print(motor2.get_pos());
   Serial.print(",");
-  Serial.print(motor1.get_u());
+  Serial.print(motor2.get_error());
   Serial.print(",");
-  Serial.println(motor2.get_u());
+  Serial.println(ref2);
 }
 
 void serial_plotting() {

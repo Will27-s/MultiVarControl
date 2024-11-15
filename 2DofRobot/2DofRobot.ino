@@ -132,7 +132,7 @@ class Motor {
     }
     void set_error_sum() {
       if (abs(e * kp) > 255) {
-
+        // Turns of integral when PWM is at max
       } else {
         e_sum += e;
       }

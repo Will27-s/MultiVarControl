@@ -618,7 +618,7 @@ def draw_cases(shape_input):
             plot_motor_position(time,motor_counts1,motor_counts2) 
 
             x_recreated, y_recreated = shape_recreation(motor_counts1,motor_counts2)
-            plt.plot(x_recreated,y_recreated, '.')
+            plt.plot(x_recreated,y_recreated, '.',markersize=15)
             plt.title("Square 2DOF")
             plt.grid()
             plt.axis('equal')
@@ -632,6 +632,8 @@ def draw_cases(shape_input):
         print(error)
         return None, None
     
+# TODO Implement backlash in code
+# def backlashGeneration(backlashAngle,)
 
 draw_cases('square')
 
