@@ -625,7 +625,8 @@ def draw_cases(shape_input):
 
             # Plotting
             time = get_time_array(motor_counts1)
-            plot_motor_position(time,motor_counts1,motor_counts2) 
+            time_square_only = get_time_array(motor_counts1square)
+            plot_motor_position(time_square_only,motor_counts1square,motor_counts2square) 
 
             x_recreated, y_recreated = shape_recreation(motor_counts1,motor_counts2)
             plt.plot(x_recreated,y_recreated, '-',markersize=15)
