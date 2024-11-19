@@ -28,7 +28,7 @@ time_taken_circle = 4
 time_taken_triangle = 2
 time_taken_square = 2
 max_speed = 150    # Example max speed, adjust as needed
-max_accel = 150   # Example max acceleration, adjust as needed
+max_accel = 200   # Example max acceleration, adjust as needed
 
 #Circle Parameters
 #x_centre_circle,y_centre_circle = forwardKinematics(100,45,L1,L2) # Using forward kinematics to define centre position
@@ -46,17 +46,27 @@ x_centre_square,y_centre_square = 60,110
 #Triangle Parameters 
 
 def inverseKinematics(x,y,L1=L1,L2=L2):
-    costh2 = (x**2 + y**2-L1**2-L2**2)/(2 * L1 * L2)
-    sinth2 = np.sqrt(1-costh2**2)
-    theta2 = np.arctan2(sinth2,costh2)
-    
+    costh2 = (x**2 + y**2 - L1**2 - L2**2) / (2 * L1 * L2)
+    sinth2 = np.sqrt(1 - costh2**2)
+    theta2 = -np.arctan2(-sinth2, costh2)  # Use elbow-down configuration by default
+
     A = x
-    B = L1 + (L2 * costh2)
+    B = L1 + L2 * costh2
     C = -L2 * sinth2
 
-    w = (C+np.sqrt(C**2 + B**2 - A**2))/(A+B)
+    w = np.zeros_like(x)
+    discriminant = C**2 + B**2 - A**2
+
+    # Handle y > 0 for positive square root
+    y_positive = y > 0
+    w[~y_positive] = (C[~y_positive] - np.sqrt(discriminant[~y_positive])) / (A[~y_positive] + B[~y_positive])
+    w[y_positive] = (C[y_positive] + np.sqrt(discriminant[y_positive])) / (A[y_positive] + B[y_positive])
+
+    # Ensure w is real
+    w = np.real(w)
     theta1 = 2 * np.arctan(w)
-    return theta1,theta2
+
+    return theta1, theta2
 
 def convert_degrees_to_encoder_counts(theta):
     return np.floor(theta * counts_per_degree)
@@ -91,14 +101,14 @@ def circleGeneration2DoF(L1,L2,circle_radius,x_centre,y_centre,time_taken,time_s
     return motor_counts1, motor_counts2
 
 def getSquareCoords(squareCentre_x,squareCentre_y,squareLength=square_length):
-    x1 = squareCentre_x + squareLength/2
-    y1 = squareCentre_y + squareLength/2
-    x2 = x1 - squareLength
-    y2 = y1
-    x3 = x2
-    y3 = y2 - squareLength
-    x4 = x3 + squareLength
+    x3 = squareCentre_x + squareLength/2
+    y3 = squareCentre_y + squareLength/2
+    x4 = x3 - squareLength
     y4 = y3
+    x1 = x4
+    y1 = y4 - squareLength
+    x2 = x1 + squareLength
+    y2 = y1
     x5 = x1
     y5 = y1
     x_coords = np.array([x1,x2,x3,x4,x5])
@@ -618,7 +628,7 @@ def draw_cases(shape_input):
             plot_motor_position(time,motor_counts1,motor_counts2) 
 
             x_recreated, y_recreated = shape_recreation(motor_counts1,motor_counts2)
-            plt.plot(x_recreated,y_recreated, '.',markersize=15)
+            plt.plot(x_recreated,y_recreated, '-',markersize=15)
             plt.title("Square 2DOF")
             plt.grid()
             plt.axis('equal')
@@ -635,7 +645,7 @@ def draw_cases(shape_input):
 # TODO Implement backlash in code
 # def backlashGeneration(backlashAngle,)
 
-draw_cases('triangle')
+draw_cases('square')
 
 
 
