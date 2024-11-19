@@ -12,11 +12,11 @@ record_duration = 10  # Record for 10 seconds
 start_time = time.time()  # Record the current time (start time)
 
 # Open a CSV file to record the data
-file_name = "recorded_data.csv"
+file_name = "zieglerPonly.csv"
 dirname = os.path.dirname(__file__)
 path = os.path.join(dirname,file_name)
     
-with open(file_name, 'w', newline='') as csvfile:
+with open(path, 'w', newline='') as csvfile:
     csvwriter = csv.writer(csvfile)
 
     try:
@@ -43,3 +43,6 @@ with open(file_name, 'w', newline='') as csvfile:
         
 # Close the serial connection
 ser.close()
+
+
+

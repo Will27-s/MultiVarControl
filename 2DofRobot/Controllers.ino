@@ -20,6 +20,11 @@ float Proportional_Control(int e, float kp) {
   return u;
 }
 
+float filter(float u, float u_prev) {
+  float filtered_u;
+  filtered_u = (alpha * u_prev) + ((1-alpha) * u);
+  return filtered_u;
+}
 
 float PID_Control(int e, int e_sum, int e_prev, float kp, float ki, float kd) {
   float u;

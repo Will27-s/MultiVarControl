@@ -1,8 +1,8 @@
 #include <SimplyAtomic.h>  // For the position read, to avoid missed counts
 #include "functionDefinition.h"
 //#include "1DoFCircleReferenceSignals.h"
-//#include "2DoFCircleReferenceSignals.h"
-#include "2DoFTriangleReferenceSignals.h"
+#include "2DoFCircleReferenceSignals.h"
+//#include "2DoFTriangleReferenceSignals.h"
 //#include "2DoFSquareReferenceSignals.h"
 
 
@@ -27,7 +27,7 @@
 #define MOT2ENCB 9
 
 
-int print_interval = 100;  // define how often values are sent to the serial monitor
+int print_interval = 20;  // define how often values are sent to the serial monitor
 int interval_count = 0;
 float interval_start = 0;
 float ref = 0;
@@ -43,8 +43,12 @@ float delta_time_micros = 2000; //microseconds
 float delta_time_seconds = delta_time_micros/1e6;
 bool isAtStartPoint = false;
 
+// Filter Values
+break_freq = 150;
+alpha = 1 - (delta_time_seconds * break_freq);
+
 // PID Control Values
-float kp = 35;
+float kp = 25;
 float ki = 180.0;
 float kd = 0.79;
 
@@ -54,7 +58,7 @@ float kd1 = kd;
 
 float kp2 = kp;
 float ki2 = ki;
-float kd2 = kd;
+float kd2 = 0.5;
 
 
 // reference signal code  
@@ -83,6 +87,7 @@ class Motor {
     int e_sum = 0;
     int e_prev = 0;
     float u = 0; // Control Signal
+    float u_prev = 0;
 
     Motor(int eA, int eB, int pwm, int in1, int in2, float p, float i , float d) : ENCA(eA), ENCB(eB), PWM_pin(pwm), IN1(in1), IN2(in2), kp(p), ki(i), kd(d) {
         // Constructor stores pin values but does not configure them
@@ -133,6 +138,7 @@ class Motor {
     void set_error_sum() {
       if (abs(e * kp) > 255) {
         // Turns of integral when PWM is at max
+        e_sum = 0;
       } else {
         e_sum += e;
       }
@@ -149,6 +155,9 @@ class Motor {
 
     void set_u(float u_) {
       u = u_;
+    }
+    void set_u_prev(float u_) {
+      u_prev = u_;
     }
     void increment_posi() {
       posi++;
@@ -175,6 +184,9 @@ class Motor {
     }
     float get_u() {
       return u;
+    }
+    float get_u_prev() {
+      return u_prev;
     }
 
     int get_ENCB_Pin() {
@@ -235,7 +247,8 @@ void loop() {
     }
   }
   
-
+  motor1.set_u_prev(motor1.get_u());
+  motor2.set_u_prev(motor2.get_u());
   
   motor1.set_error_prev(ref1);
   motor2.set_error_prev(ref2);
@@ -267,8 +280,8 @@ void loop() {
  
   
   // PID Control
-  motor1.set_u(PID_Control( motor1.e, motor1.e_sum, motor1.e_prev, motor1.kp,motor1.ki,motor1.kd));
-  motor2.set_u(PID_Control( motor2.e, motor2.e_sum, motor2.e_prev, motor2.kp,motor2.ki,motor2.kd));
+  motor1.set_u(filter(PID_Control( motor1.e, motor1.e_sum, motor1.e_prev, motor1.kp,motor1.ki,motor1.kd)),motor1.get_u_prev());
+  motor2.set_u(filter(PID_Control( motor2.e, motor2.e_sum, motor2.e_prev, motor2.kp,motor2.ki,motor2.kd)),motor2.get_u_prev());
   
   // Constant Values
   //motor1.set_u(0.0);

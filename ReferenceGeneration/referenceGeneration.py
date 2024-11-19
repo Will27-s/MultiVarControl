@@ -24,11 +24,11 @@ def forwardKinematics(th1,th2,L1,L2):
     return x,y
 
 # Time Parameters
-time_taken_circle = 1
+time_taken_circle = 4
 time_taken_triangle = 2
 time_taken_square = 2
-max_speed = 320    # Example max speed, adjust as needed
-max_accel = 2400   # Example max acceleration, adjust as needed
+max_speed = 150    # Example max speed, adjust as needed
+max_accel = 150   # Example max acceleration, adjust as needed
 
 #Circle Parameters
 #x_centre_circle,y_centre_circle = forwardKinematics(100,45,L1,L2) # Using forward kinematics to define centre position
@@ -471,7 +471,7 @@ def draw_cases(shape_input):
 
             # Plotting
             time = get_time_array(motor_counts1)
-            plot_motor_position(time,motor_counts1,motor_counts2) # Need to close plot window to end script, weird behaviour in VSCode
+            # plot_motor_position(time,motor_counts1,motor_counts2) # Need to close plot window to end script, weird behaviour in VSCode
 
             x_recreated, y_recreated = shape_recreation(motor_counts1,motor_counts2)
             plt.plot(x_recreated,y_recreated, '.')
@@ -635,7 +635,7 @@ def draw_cases(shape_input):
 # TODO Implement backlash in code
 # def backlashGeneration(backlashAngle,)
 
-draw_cases('square')
+draw_cases('triangle')
 
 
 

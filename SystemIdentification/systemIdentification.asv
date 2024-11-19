@@ -21,14 +21,13 @@ speed2 = [0;diff(pos2)/dt];
 time = linspace(0, (length(pos1)) * dt, length(pos1));
 
 data1 = iddata(speed1,in1,dt);
-sys1 = tfest(data1,3,2);
-
-overS = tf(1,[1,0]);
-G1 = sys1 / (Gc * (1 - sys1 ))
+sys1 = tfest(data1,1);
+tf =
+G1 = sys1 / s*(Gc * (1 - sys1 ))
 
 data2 = iddata(speed2,in2,dt);
 sys2 = tfest(data2,1);
-%G2 = overS * sys2 / (Gc * (1 - sys2 )); % Finding plant system from closed loop response
+G2 = sys2 / s*(Gc * (1 - sys2 )); % Finding plant system from closed loop response
 
 
 subplot(1,2,1)
