@@ -40,7 +40,7 @@ centre = 75,100
 x_centre_circle,y_centre_circle = 50,110
 print(x_centre_circle,y_centre_circle)
 x_centre_triangle,y_centre_triangle = centre
-x_centre_square,y_centre_square = 60,110
+x_centre_square,y_centre_square = 70,110
 
 
 #Triangle Parameters 

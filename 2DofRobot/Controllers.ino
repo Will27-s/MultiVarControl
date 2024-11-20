@@ -34,7 +34,7 @@ float PID_Control(int e, int e_sum, int e_prev, float kp, float ki, float kd) {
   float derivative = kd * (e - e_prev)/delta_time_seconds;
 
   
-  u = proportional + integral + derivative;
+  u = proportional + (0.99 * integral) + derivative;
   u = set_u_to_max_if_out_of_bounds(u);
 
   return u;

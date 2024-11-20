@@ -1,8 +1,8 @@
 #include <SimplyAtomic.h>  // For the position read, to avoid missed counts
 #include "functionDefinition.h"
 //#include "1DoFCircleReferenceSignals.h"
-#include "2DoFCircleReferenceSignals.h"
-//#include "2DoFTriangleReferenceSignals.h"
+//#include "2DoFCircleReferenceSignals.h"
+#include "2DoFTriangleReferenceSignals.h"
 //#include "2DoFSquareReferenceSignals.h"
 
 
@@ -27,12 +27,12 @@
 #define MOT2ENCB 9
 
 
-int print_interval = 20;  // define how often values are sent to the serial monitor
+int print_interval = 1;  // define how often values are sent to the serial monitor
 int interval_count = 0;
 float interval_start = 0;
 float ref = 0;
             // u is the control signal
-int u_amplitude = 50 ;  // control signal amplitude (must be < 256)
+int u_amplitude = 80 ;  // control signal amplitude (must be < 256)
 long time_start = 0;
 long loop_start_time = 0;
 float counts_per_rotation = 131.25 * 16;
@@ -44,13 +44,14 @@ float delta_time_seconds = delta_time_micros/1e6;
 bool isAtStartPoint = false;
 
 // Filter Values
-break_freq = 150;
-alpha = 1 - (delta_time_seconds * break_freq);
+float break_freq = 150;
+// float alpha = 1 - (delta_time_seconds * break_freq);
+float alpha = 0.2;
 
 // PID Control Values
-float kp = 25;
-float ki = 180.0;
-float kd = 0.79;
+float kp = 30.6628;
+float ki = 100.0994;
+float kd = 0.89;
 
 float kp1 = kp;
 float ki1 = ki;
@@ -58,7 +59,7 @@ float kd1 = kd;
 
 float kp2 = kp;
 float ki2 = ki;
-float kd2 = 0.5;
+float kd2 = kd;
 
 
 // reference signal code  
@@ -136,7 +137,7 @@ class Motor {
       e_prev = ref - pos;
     }
     void set_error_sum() {
-      if (abs(e * kp) > 255) {
+      if (abs(e * kp) + abs(kd * (e - e_prev)/delta_time_seconds) > 255) {
         // Turns of integral when PWM is at max
         e_sum = 0;
       } else {
@@ -280,8 +281,11 @@ void loop() {
  
   
   // PID Control
-  motor1.set_u(filter(PID_Control( motor1.e, motor1.e_sum, motor1.e_prev, motor1.kp,motor1.ki,motor1.kd)),motor1.get_u_prev());
-  motor2.set_u(filter(PID_Control( motor2.e, motor2.e_sum, motor2.e_prev, motor2.kp,motor2.ki,motor2.kd)),motor2.get_u_prev());
+  motor1.set_u(filter(PID_Control( motor1.e, motor1.e_sum, motor1.e_prev, motor1.kp,motor1.ki,motor1.kd),motor1.get_u_prev()));
+  motor2.set_u(filter(PID_Control( motor2.e, motor2.e_sum, motor2.e_prev, motor2.kp,motor2.ki,motor2.kd),motor2.get_u_prev()));
+  
+  // motor1.set_u(PID_Control( motor1.e, motor1.e_sum, motor1.e_prev, motor1.kp,motor1.ki,motor1.kd));
+  // motor2.set_u(PID_Control( motor2.e, motor2.e_sum, motor2.e_prev, motor2.kp,motor2.ki,motor2.kd));
   
   // Constant Values
   //motor1.set_u(0.0);
@@ -290,8 +294,8 @@ void loop() {
 
   // TODO: Do system identification with this
   // Step Change
-  //motor1.set_u(Step_Input(1.5));
-  //motor2.set_u(Step_Input(1.5));
+  //motor1.set_u(Step_Input(0.2));
+  // motor1.set_u(Step_Input(3));
 
   // Drive Motor Based on u value
   motor1.set_motor(motor1.get_u());

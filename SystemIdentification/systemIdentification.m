@@ -1,19 +1,14 @@
-filename1 = "recorded_data.csv";
-filename2 = "recorded_data.csv";
-
-kp = 20;
-ki = 129;
-kd = 0.79;
-Gc = tf([kd, kp, ki], [1, 0])
+filename1 = "systemIdentification.csv";
+filename2 = "systemIdentification.csv";
 
 startIdx = 1000;
 A = readmatrix(filename1);
 B = readmatrix(filename2);
 
 dt = 2000/1e6;
-pos1 = A(startIdx:end,1);
+pos1 = A(startIdx:end,2);
 pos2 = B(startIdx:end,2);
-in1 = A(startIdx:end,3);
+in1 = A(startIdx:end,1);
 in2 = B(startIdx:end,4);
 
 speed1 = [0;diff(pos1)/dt];
@@ -21,32 +16,30 @@ speed2 = [0;diff(pos2)/dt];
 time = linspace(0, (length(pos1)) * dt, length(pos1));
 
 data1 = iddata(speed1,in1,dt);
-sys1 = tfest(data1,3,2);
-
-overS = tf(1,[1,0]);
-G1 = sys1 / (Gc * (1 - sys1 ))
+sys1 = tfest(data1,1);
 
 data2 = iddata(speed2,in2,dt);
 sys2 = tfest(data2,1);
 %G2 = overS * sys2 / (Gc * (1 - sys2 )); % Finding plant system from closed loop response
 
 
-subplot(1,2,1)
+%subplot(1,2,1)
 compare(data1,sys1)
 
-subplot(1,2,2)
-compare(data2,sys2)
+%subplot(1,2,2)
+%compare(data2,sys2)
 
 T1 = 1/sys1.Denominator(2)
 Lambda1 = sys1.Numerator * T1
 
-T2 = 1/sys2.Denominator(2)
-Lambda2 = sys2.Numerator * T1
+%T2 = 1/sys2.Denominator(2)
+%Lambda2 = sys2.Numerator * T1
 
 Ts = 0.35;
+u_max = max(in1)
 [kp1,ki1,kd1] = getControlConstants(T1, Lambda1, Ts)
 
-[kp2,ki2,kd2] = getControlConstants(T2, Lambda2, Ts)
+%[kp2,ki2,kd2] = getControlConstants(T2, Lambda2, Ts)
 
 function [kp, ki, kd] = getControlConstants(T, Lambda, Ts)
     % getControlConstants calculates control constants for a control system.
