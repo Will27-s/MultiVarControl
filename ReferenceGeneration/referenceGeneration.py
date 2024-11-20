@@ -100,6 +100,80 @@ def circleGeneration2DoF(L1,L2,circle_radius,x_centre,y_centre,time_taken,time_s
 
     return motor_counts1, motor_counts2
 
+def circleReferenceGenerationWithVelocityProfiles(L1, L2, circle_radius, x_centre, y_centre, max_speed, max_accel, time_step):
+    # Total circumference of the circle
+    circle_length = 2 * np.pi * circle_radius
+
+    # Time calculations
+    t0 = 0
+    t1 = np.ceil(max_speed / (max_accel * time_step)) * time_step  # Time to reach max speed
+    t2 = np.ceil((circle_length - (max_accel * t1**2)) / (max_speed * time_step)) * time_step  # Constant speed duration
+    t3 = t1 + t2  # End of constant speed
+
+    # Discrete time points
+    t0123_dt = np.round(np.array([t0, t1, t2, t3]) / time_step).astype(int) + 1
+    nt = t0123_dt[-1]
+    t = np.arange(0, nt) * time_step
+
+    # Recalculate max_speed and max_accel for consistent results
+    max_speed = circle_length / (t2 + t1)
+    max_accel = max_speed / t1
+
+    # Velocity profile
+    v = np.zeros(nt)
+    # Acceleration phase
+    v[t0123_dt[0]:t0123_dt[1]] = max_accel * t[t0123_dt[0]:t0123_dt[1]]
+    # Constant speed phase
+    v[t0123_dt[1]:t0123_dt[2]] = max_speed
+    # Deceleration phase
+    v[t0123_dt[2]:t0123_dt[3]] = max_speed - max_accel * (t[t0123_dt[2]:t0123_dt[3]] - t[t0123_dt[2]])
+
+    # Position calculation using trapezoidal integration
+    s = np.cumsum((np.append([0], v[:-1]) + v) / 2) * time_step
+
+    # Adjust s to match the full circumference of the circle
+    s = (s / s[-1]) * circle_length
+
+    # Angular positions around the circle
+    angles = (s / circle_radius) % (2 * np.pi)  # Map distances to angular positions
+
+    # Path coordinates
+    x = x_centre + circle_radius * np.cos(angles)
+    y = y_centre + circle_radius * np.sin(angles)
+
+    # Initialize encoder values
+    motor1EncoderValues = np.array([])
+    motor2EncoderValues = np.array([])
+
+    # Calculate encoder values for each position along the path
+    for xPos, yPos in zip(x, y):
+        th1, th2 = inverseKinematics(xPos, yPos, L1, L2)
+        en1 = convert_degrees_to_encoder_counts(np.rad2deg(th1))
+        en2 = convert_degrees_to_encoder_counts(np.rad2deg(th2))
+        motor1EncoderValues = np.append(motor1EncoderValues, en1)
+        motor2EncoderValues = np.append(motor2EncoderValues, en2)
+
+    # Plotting to verify the circle path
+    plt.plot(x, y)
+    plt.xlabel("X Position")
+    plt.ylabel("Y Position")
+    plt.title("Circle Path with Velocity Profile")
+    plt.grid(True)
+    plt.axis('equal')
+    plt.show()
+
+    # Plot velocity profile
+    plt.plot(t, v)
+    plt.xlabel("Time (s)")
+    plt.ylabel("Velocity (units/s)")
+    plt.title("Velocity Profile")
+    plt.grid(True)
+    plt.show()
+
+    return motor1EncoderValues, motor2EncoderValues
+
+
+
 def getSquareCoords(squareCentre_x,squareCentre_y,squareLength=square_length):
     x3 = squareCentre_x + squareLength/2
     y3 = squareCentre_y + squareLength/2
@@ -435,7 +509,7 @@ def draw_cases(shape_input):
             motor_counts2_start = convert_degrees_to_encoder_counts(0)
 
             motor_counts1circle, motor_counts2circle = circleGeneration2DoF(L1,L2,circle_radius,x_centre_circle,y_centre_circle,time_taken_circle,time_step)
-            
+            # motor_counts1circle, motor_counts2circle = circleReferenceGenerationWithVelocityProfiles(L1, L2, circle_radius, x_centre_circle, y_centre_circle, max_speed, max_accel, time_step)
 
             motor_counts1 = np.array([motor_counts1circle[0]])
             motor_counts2 = np.array([motor_counts2circle[0]])
@@ -481,7 +555,11 @@ def draw_cases(shape_input):
 
             # Plotting
             time = get_time_array(motor_counts1)
-            # plot_motor_position(time,motor_counts1,motor_counts2) # Need to close plot window to end script, weird behaviour in VSCode
+            plot_motor_position(time,motor_counts1,motor_counts2) # Need to close plot window to end script, weird behaviour in VSCode
+            velocity1 = np.insert(np.diff(motor_counts1),0,0)/time_step
+            velocity2 = np.insert(np.diff(motor_counts2),0,0)/time_step
+            
+            plot_motor_position(time,velocity1,velocity2) # Need to close plot window to end script, weird behaviour in VSCode
 
             x_recreated, y_recreated = shape_recreation(motor_counts1,motor_counts2)
             plt.plot(x_recreated,y_recreated, '.')
@@ -646,7 +724,7 @@ def draw_cases(shape_input):
 # TODO Implement backlash in code
 # def backlashGeneration(backlashAngle,)
 
-draw_cases('square')
+draw_cases('circle')
 
 
 
