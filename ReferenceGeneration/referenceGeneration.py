@@ -37,7 +37,7 @@ x_centre_square,y_centre_square = forwardKinematics(45,90,L1,L2) # Using forward
 
 centre = 75,100
 
-x_centre_circle,y_centre_circle = 50,110
+x_centre_circle,y_centre_circle = 50,123
 print(x_centre_circle,y_centre_circle)
 x_centre_triangle,y_centre_triangle = centre
 x_centre_square,y_centre_square = 70,110
@@ -555,11 +555,11 @@ def draw_cases(shape_input):
 
             # Plotting
             time = get_time_array(motor_counts1)
-            plot_motor_position(time,motor_counts1,motor_counts2) # Need to close plot window to end script, weird behaviour in VSCode
+            # plot_motor_position(time,motor_counts1,motor_counts2) # Need to close plot window to end script, weird behaviour in VSCode
             velocity1 = np.insert(np.diff(motor_counts1),0,0)/time_step
             velocity2 = np.insert(np.diff(motor_counts2),0,0)/time_step
             
-            plot_motor_position(time,velocity1,velocity2) # Need to close plot window to end script, weird behaviour in VSCode
+            # plot_motor_position(time,velocity1,velocity2) # Need to close plot window to end script, weird behaviour in VSCode
 
             x_recreated, y_recreated = shape_recreation(motor_counts1,motor_counts2)
             plt.plot(x_recreated,y_recreated, '.')
@@ -724,7 +724,7 @@ def draw_cases(shape_input):
 # TODO Implement backlash in code
 # def backlashGeneration(backlashAngle,)
 
-draw_cases('circle')
+draw_cases('triangle')
 
 
 

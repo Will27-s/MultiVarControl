@@ -46,11 +46,11 @@ bool isAtStartPoint = false;
 // Filter Values
 float break_freq = 150;
 // float alpha = 1 - (delta_time_seconds * break_freq);
-float alpha = 0.2;
+float alpha = 0.86;
 
 // PID Control Values
 float kp = 30.6628;
-float ki = 100.0994;
+float ki = 150.0994;
 float kd = 0.89;
 
 float kp1 = kp;
