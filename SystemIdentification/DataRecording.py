@@ -45,4 +45,3 @@ with open(path, 'w', newline='') as csvfile:
 ser.close()
 
 
-

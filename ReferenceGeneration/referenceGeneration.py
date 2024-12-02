@@ -27,7 +27,7 @@ def forwardKinematics(th1,th2,L1,L2):
 time_taken_circle = 4
 time_taken_triangle = 2
 time_taken_square = 2
-max_speed = 150    # Example max speed, adjust as needed
+max_speed = 120    # Example max speed, adjust as needed
 max_accel = 200   # Example max acceleration, adjust as needed
 
 #Circle Parameters
@@ -237,6 +237,9 @@ def squareReferenceGenerationWithVelocityProfiles(x_centre, y_centre, square_len
     # Adjust s to exactly match the square length
     s = (s / s[-1]) * square_length  # Scale s to match the square length exactly
 
+    plt.plot(v)
+    plt.show()
+
     # Path coordinates
     x = np.zeros(nt * 4)
     y = np.zeros(nt * 4)
@@ -364,7 +367,10 @@ def triangleReferenceGenerationWithVelocityProfiles(vertices, triangle_length=tr
         # Assign coordinates along this side of the triangle
         x[i * nt:(i + 1) * nt] = vertices[i][0] + normal_direction[0] * s
         y[i * nt:(i + 1) * nt] = vertices[i][1] + normal_direction[1] * s
-
+    plt.plot(s,v)
+    plt.xlabel('Distance along triangle side (mm)')
+    plt.ylabel('Pen Velocity (mm/s)')
+    plt.show()
     # Repeat velocity profile for the full drawing cycle
     v = np.tile(v, 3)
     nt_draw = 3 * nt
@@ -434,6 +440,8 @@ def shape_recreation(motor_counts1,motor_counts2):
         y_values.append(y)
     x_values = np.array(x_values)
     y_values = np.array(y_values)
+    time_taken = get_time_array(motor_counts1)[-1]
+    print(f'The shape takes {time_taken} to draw')
 
     return x_values, y_values
 
@@ -568,7 +576,7 @@ def draw_cases(shape_input):
             plt.axis('equal')
             plt.show()
 
-            return motor_counts1, motor_counts2
+            return motor_counts1circle, motor_counts2circle
         
         # Circle 1DOF - Testing
         elif shape_input == "circle1dof":
@@ -653,6 +661,7 @@ def draw_cases(shape_input):
             plt.grid()
             plt.axis('equal')
             plt.show()
+            return motor_counts1triangle,motor_counts2triangle
 
         elif shape_input == "square":
             
@@ -713,6 +722,7 @@ def draw_cases(shape_input):
             plt.axis('equal')
             plt.show()
 
+            return motor_counts1square,motor_counts2square
         
         else:
             raise ValueError("Invalid Shape Input")
@@ -724,7 +734,33 @@ def draw_cases(shape_input):
 # TODO Implement backlash in code
 # def backlashGeneration(backlashAngle,)
 
-draw_cases('triangle')
+def backlash(motor1_counts, motor2_counts,backlash_angle=3):
+
+    backlash_counts = convert_degrees_to_encoder_counts(backlash_angle)
+    m1plus = motor1_counts+backlash_counts
+    m2plus = motor2_counts+backlash_counts
+    m1minus = motor1_counts-backlash_counts
+    m2minus = motor2_counts-backlash_counts
+    original_x, original_y = shape_recreation(motor1_counts,motor2_counts)
+    m1plus_recreated, m2plus_recreated = shape_recreation(m1plus, m2plus)    
+    m1plus_recreated, m2minus_recreated = shape_recreation(m1plus, m2minus)
+    m1minus_recreated, m2plus_recreated = shape_recreation(m1minus, m2plus)
+    m1minus_recreated, m2minus_recreated = shape_recreation(m1minus, m2minus) 
+
+    # plt.plot(np.array([m1plus_recreated[1:],m1plus_recreated[1:],m1minus_recreated[1:],m1minus_recreated[1:]]).flatten(), np.array([m2plus_recreated[1:],m2minus_recreated[1:],m2plus_recreated[1:],m2minus_recreated[1:]]).flatten(), '-') 
+    
+    plt.plot(m1plus_recreated[1:], m2plus_recreated[1:], '-', color='red') 
+    plt.plot(m1plus_recreated[1:], m2minus_recreated[1:], '-', color='red') 
+    plt.plot(m1minus_recreated[1:], m2plus_recreated[1:], '-', color='red') 
+    plt.plot(m1minus_recreated[1:], m2minus_recreated[1:], '-', color='red')
+    plt.plot(original_x[1:], original_y[1:], '-', label = 'No backlash') 
+    plt.axis('equal')
+    plt.grid()
+    plt.legend()
+    plt.show()
+
+motor1_counts, motor2_counts = draw_cases('triangle')
+backlash(motor1_counts, motor2_counts,backlash_angle=3)
 
 
 

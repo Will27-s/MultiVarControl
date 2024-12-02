@@ -138,7 +138,7 @@ class Motor {
     }
     void set_error_sum() {
       if (abs(e * kp) + abs(kd * (e - e_prev)/delta_time_seconds) > 255) {
-        // Turns of integral when PWM is at max
+        // Turns of integral when input is saturated
         e_sum = 0;
       } else {
         e_sum += e;
