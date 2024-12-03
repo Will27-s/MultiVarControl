@@ -746,17 +746,23 @@ def backlash(motor1_counts, motor2_counts,backlash_angle=3):
     m1plus_recreated, m2minus_recreated = shape_recreation(m1plus, m2minus)
     m1minus_recreated, m2plus_recreated = shape_recreation(m1minus, m2plus)
     m1minus_recreated, m2minus_recreated = shape_recreation(m1minus, m2minus) 
-
     # plt.plot(np.array([m1plus_recreated[1:],m1plus_recreated[1:],m1minus_recreated[1:],m1minus_recreated[1:]]).flatten(), np.array([m2plus_recreated[1:],m2minus_recreated[1:],m2plus_recreated[1:],m2minus_recreated[1:]]).flatten(), '-') 
-    
-    plt.plot(m1plus_recreated[1:], m2plus_recreated[1:], '-', color='red') 
-    plt.plot(m1plus_recreated[1:], m2minus_recreated[1:], '-', color='red') 
-    plt.plot(m1minus_recreated[1:], m2plus_recreated[1:], '-', color='red') 
-    plt.plot(m1minus_recreated[1:], m2minus_recreated[1:], '-', color='red')
-    plt.plot(original_x[1:], original_y[1:], '-', label = 'No backlash') 
+    backlash_envelope_x = np.concatenate((m1plus_recreated[1:,None],m1plus_recreated[1:,None],m1minus_recreated[1:,None],m1minus_recreated[1:,None],original_x[1:,None]),axis=1)
+    backlash_envelope_y = np.concatenate((m2plus_recreated[1:,None],m2plus_recreated[1:,None],m2minus_recreated[1:,None],m2minus_recreated[1:,None],original_y[1:,None]),axis=1)
+    for (x,y) in zip(backlash_envelope_x,backlash_envelope_y):
+
+        plt.fill(x,y,color='red')
+    # plt.plot(m1plus_recreated[1:], m2plus_recreated[1:], '-', color='red') 
+    # plt.plot(m1plus_recreated[1:], m2minus_recreated[1:], '-', color='red') 
+    # plt.plot(m1minus_recreated[1:], m2plus_recreated[1:], '-', color='red') 
+    # plt.plot(m1minus_recreated[1:], m2minus_recreated[1:], '-', color='red')
+    plt.plot(original_x[1:], original_y[1:], '-', label = 'Original Reference', linewidth=4,color='green')
+    plt.xlabel('x (mm)',fontsize=15)
+    plt.ylabel('y (mm)',fontsize=15)
+    plt.tick_params(axis='both', labelsize=15)
     plt.axis('equal')
     plt.grid()
-    plt.legend()
+    plt.legend(fontsize=12)
     plt.show()
 
 motor1_counts, motor2_counts = draw_cases('triangle')

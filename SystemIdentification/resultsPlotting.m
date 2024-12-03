@@ -7,8 +7,8 @@ filename1 = "Trianglebest.csv";
 A = readmatrix(filename1);
 dt = 2000/1e6;
 
-startIdx = 800;
-endIdx = 3000;
+startIdx = 800  ;
+endIdx = 2700;
 
 time = 0:dt:(endIdx-startIdx)*dt
 
